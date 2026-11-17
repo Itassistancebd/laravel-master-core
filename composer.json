@@ -1,0 +1,233 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "example/laravel-master-core-development-app",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": ["laravel", "framework"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "example/laravel-master-core": "^0.1.0",
+        "example/laravel-master-core-auth": "^0.1.0",
+        "example/laravel-master-core-foundation": "^0.1.0",
+        "example/laravel-master-core-settings": "^0.1.0",
+        "example/laravel-master-core-user-management": "^0.1.0",
+        "example/laravel-master-core-roles-permissions": "^0.1.0",
+        "example/laravel-master-core-audit-logs": "^0.1.0",
+        "example/laravel-master-core-module-manager": "^0.1.0",
+        "example/laravel-master-core-system-health": "^0.1.0",
+        "example/laravel-master-core-notifications": "^0.1.0",
+        "example/laravel-master-core-crud-engine": "^0.1.0",
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10.1"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "laravel/pail": "^1.2.2",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.41",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "phpunit/phpunit": "^11.5.50",
+        "example/laravel-master-core-project-generator": "^0.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/",
+            "MasterCore\\Foundation\\Tests\\": "packages/core/foundation/tests/",
+            "MasterCore\\Auth\\Tests\\": "packages/core/auth/tests/",
+            "MasterCore\\Settings\\": "packages/core/settings/src/",
+            "MasterCore\\Settings\\Tests\\": "packages/core/settings/tests/",
+            "MasterCore\\UserManagement\\Tests\\": "packages/core/user-management/tests/",
+            "MasterCore\\RolesPermissions\\Tests\\": "packages/core/roles-permissions/tests/",
+            "MasterCore\\AuditLogs\\Tests\\": "packages/core/audit-logs/tests/",
+            "MasterCore\\ModuleManager\\Tests\\": "packages/core/module-manager/tests/",
+            "MasterCore\\SystemHealth\\Tests\\": "packages/core/system-health/tests/",
+            "MasterCore\\Notifications\\Tests\\": "packages/core/notifications/tests/",
+            "MasterCore\\CrudEngine\\Tests\\": "packages/core/crud-engine/tests/",
+            "MasterCore\\ProjectGenerator\\": "packages/tools/project-generator/src/",
+            "MasterCore\\ProjectGenerator\\Tests\\": "packages/tools/project-generator/tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/core/foundation",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-foundation": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/master-core",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/settings",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-settings": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/auth",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-auth": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/user-management",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-user-management": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/roles-permissions",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-roles-permissions": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/audit-logs",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-audit-logs": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/module-manager",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-module-manager": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/system-health",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-system-health": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/notifications",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-notifications": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/core/crud-engine",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-crud-engine": "0.1.0"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/tools/project-generator",
+            "options": {
+                "symlink": false,
+                "versions": {
+                    "example/laravel-master-core-project-generator": "0.1.0"
+                }
+            }
+        }
+    ],
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm install",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

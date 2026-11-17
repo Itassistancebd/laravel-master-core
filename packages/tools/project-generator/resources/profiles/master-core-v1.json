@@ -1,0 +1,392 @@
+{
+  "generator_profile_schema": 1,
+  "metapackage": {
+    "name": "example/laravel-master-core",
+    "version_constraint": "^0.1.0",
+    "require": {
+      "php": "^8.2",
+      "laravel/framework": "^12.0",
+      "example/laravel-master-core-foundation": "^0.1.0"
+    },
+    "extra": {
+      "profile_schema": 1,
+      "profile": "master-core-v1",
+      "baseline": [
+        "example/laravel-master-core-foundation"
+      ],
+      "optional_features": {
+        "settings": {
+          "composer": "example/laravel-master-core-settings",
+          "npm": "@itassistance-bd/settings-ui",
+          "frontend_entrypoint": "settings",
+          "frontend_exports": [
+            "SettingsApp"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation"
+          ],
+          "has_package_migrations": true,
+          "frontend_styles": "@itassistance-bd/settings-ui/style.css"
+        },
+        "auth": {
+          "composer": "example/laravel-master-core-auth",
+          "npm": "@itassistance-bd/auth",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "MasterCoreAuthApp",
+            "createAuthRouter"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation"
+          ],
+          "has_package_migrations": false,
+          "frontend_styles": "@itassistance-bd/auth/style.css"
+        },
+        "user-management": {
+          "composer": "example/laravel-master-core-user-management",
+          "npm": "@itassistance-bd/user-management",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "createUserManagementRoutes"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation",
+            "example/laravel-master-core-auth"
+          ],
+          "has_package_migrations": true,
+          "frontend_styles": "@itassistance-bd/user-management/style.css"
+        },
+        "roles-permissions": {
+          "composer": "example/laravel-master-core-roles-permissions",
+          "npm": "@itassistance-bd/roles-permissions",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "canAccessPermission",
+            "createRolesPermissionsRoutes"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation",
+            "example/laravel-master-core-user-management"
+          ],
+          "has_package_migrations": true,
+          "frontend_styles": "@itassistance-bd/roles-permissions/style.css"
+        },
+        "audit-logs": {
+          "composer": "example/laravel-master-core-audit-logs",
+          "npm": "@itassistance-bd/audit-logs",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "createAuditLogRoutes"
+          ],
+          "composer_dependencies": [],
+          "has_package_migrations": true,
+          "frontend_styles": "@itassistance-bd/audit-logs/style.css"
+        },
+        "module-manager": {
+          "composer": "example/laravel-master-core-module-manager",
+          "npm": "@itassistance-bd/module-manager",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "createModuleManagerRoutes"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation"
+          ],
+          "has_package_migrations": false,
+          "frontend_styles": "@itassistance-bd/module-manager/style.css"
+        },
+        "system-health": {
+          "composer": "example/laravel-master-core-system-health",
+          "npm": "@itassistance-bd/system-health",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "createSystemHealthRoutes"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation",
+            "example/laravel-master-core-roles-permissions"
+          ],
+          "has_package_migrations": false,
+          "frontend_styles": "@itassistance-bd/system-health/style.css"
+        },
+        "notifications": {
+          "composer": "example/laravel-master-core-notifications",
+          "npm": "@itassistance-bd/notifications",
+          "frontend_entrypoint": "auth",
+          "frontend_exports": [
+            "createNotificationsRoutes"
+          ],
+          "composer_dependencies": [
+            "example/laravel-master-core-foundation",
+            "example/laravel-master-core-roles-permissions"
+          ],
+          "has_package_migrations": true,
+          "frontend_styles": "@itassistance-bd/notifications/style.css"
+        },
+        "crud-engine": {
+          "composer": "example/laravel-master-core-crud-engine",
+          "npm": "@itassistance-bd/crud-engine",
+          "frontend_entrypoint": "resource-owned",
+          "frontend_exports": [
+            "RegisteredCrudPage",
+            "useCrudResource"
+          ],
+          "composer_dependencies": [],
+          "has_package_migrations": false,
+          "frontend_styles": "@itassistance-bd/crud-engine/style.css"
+        }
+      },
+      "shared_npm": "@itassistance-bd/ui",
+      "activation": {
+        "backend": "composer-selection-and-package-discovery",
+        "frontend": "explicit-host-route-imports",
+        "global_automatic_feature_activation": false,
+        "automatic_permission_grants": false,
+        "automatic_migrations": false,
+        "automatic_super_admin_provisioning": false
+      }
+    }
+  },
+  "toolchain": {
+    "php": "^8.2",
+    "laravel": "^12.0",
+    "node": null,
+    "npm": null,
+    "frontend": {
+      "vue": "^3.5.43",
+      "vite": "^7.3.0",
+      "vue_plugin": "^6.0.10",
+      "typescript": "^5.9.3",
+      "vue_router": "^4.6.3",
+      "axios": "^1.11.0"
+    }
+  },
+  "npm_packages": {
+    "settings": {
+      "name": "@itassistance-bd/settings-ui",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/ui": "^0.1.0"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "auth": {
+      "name": "@itassistance-bd/auth",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/ui": "^0.1.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "user-management": {
+      "name": "@itassistance-bd/user-management",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/auth": "^0.1.0",
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "roles-permissions": {
+      "name": "@itassistance-bd/roles-permissions",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/auth": "^0.1.0",
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "audit-logs": {
+      "name": "@itassistance-bd/audit-logs",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "module-manager": {
+      "name": "@itassistance-bd/module-manager",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/auth": "^0.1.0",
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "system-health": {
+      "name": "@itassistance-bd/system-health",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/auth": "^0.1.0",
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "notifications": {
+      "name": "@itassistance-bd/notifications",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    },
+    "crud-engine": {
+      "name": "@itassistance-bd/crud-engine",
+      "version": "0.1.0",
+      "dependencies": {
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0"
+      },
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts",
+          "development": "./resources/js/index.ts",
+          "import": "./dist/index.js"
+        },
+        "./style.css": {
+          "development": "./resources/js/dev-styles.css",
+          "import": "./dist/index.css"
+        }
+      }
+    }
+  },
+  "shared_npm": {
+    "name": "@itassistance-bd/ui",
+    "version": "0.1.0",
+    "dependencies": {},
+    "peerDependencies": {
+      "vue": "^3.5.0"
+    },
+    "exports": {
+      ".": {
+        "development": "./src/index.ts",
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "./styles.css": {
+        "development": "./src/styles/forms.css",
+        "import": "./dist/styles.css"
+      }
+    }
+  }
+}

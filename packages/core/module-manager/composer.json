@@ -1,0 +1,30 @@
+{
+    "name": "example/laravel-master-core-module-manager",
+    "description": "Read-only inventory of approved Laravel Master Core modules.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "example/laravel-master-core-foundation": "^0.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MasterCore\\ModuleManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MasterCore\\ModuleManager\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasterCore\\ModuleManager\\Providers\\ModuleManagerServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,1 @@
+export { createModuleManagerRoutes } from './routes';

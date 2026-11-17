@@ -1,0 +1,164 @@
+{
+    "name": "example/laravel-master-core",
+    "description": "Lean Composer entry point for the optional Laravel Master Core packages.",
+    "type": "metapackage",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "example/laravel-master-core-foundation": "^0.1.0"
+    },
+    "suggest": {
+        "example/laravel-master-core-settings": "Optional application settings and branding.",
+        "example/laravel-master-core-auth": "Optional Fortify and Sanctum authentication integration.",
+        "example/laravel-master-core-user-management": "Optional host-user lifecycle management; installs Authentication and Foundation.",
+        "example/laravel-master-core-roles-permissions": "Optional Core RBAC; installs User Management and its prerequisites.",
+        "example/laravel-master-core-audit-logs": "Optional append-only audit history.",
+        "example/laravel-master-core-module-manager": "Optional read-only package inventory.",
+        "example/laravel-master-core-system-health": "Optional authenticated system readiness checks.",
+        "example/laravel-master-core-notifications": "Optional recipient-scoped in-app notifications.",
+        "example/laravel-master-core-crud-engine": "Optional resource-owned CRUD contracts and query helpers."
+    },
+    "extra": {
+        "master-core": {
+            "profile_schema": 1,
+            "profile": "master-core-v1",
+            "baseline": [
+                "example/laravel-master-core-foundation"
+            ],
+            "optional_features": {
+                "settings": {
+                    "composer": "example/laravel-master-core-settings",
+                    "npm": "@itassistance-bd/settings-ui",
+                    "frontend_entrypoint": "settings",
+                    "frontend_exports": [
+                        "SettingsApp"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation"
+                    ],
+                    "has_package_migrations": true,
+                    "frontend_styles": "@itassistance-bd/settings-ui/style.css"
+                },
+                "auth": {
+                    "composer": "example/laravel-master-core-auth",
+                    "npm": "@itassistance-bd/auth",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "MasterCoreAuthApp",
+                        "createAuthRouter"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation"
+                    ],
+                    "has_package_migrations": false,
+                    "frontend_styles": "@itassistance-bd/auth/style.css"
+                },
+                "user-management": {
+                    "composer": "example/laravel-master-core-user-management",
+                    "npm": "@itassistance-bd/user-management",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "createUserManagementRoutes"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation",
+                        "example/laravel-master-core-auth"
+                    ],
+                    "has_package_migrations": true,
+                    "frontend_styles": "@itassistance-bd/user-management/style.css"
+                },
+                "roles-permissions": {
+                    "composer": "example/laravel-master-core-roles-permissions",
+                    "npm": "@itassistance-bd/roles-permissions",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "canAccessPermission",
+                        "createRolesPermissionsRoutes"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation",
+                        "example/laravel-master-core-user-management"
+                    ],
+                    "has_package_migrations": true,
+                    "frontend_styles": "@itassistance-bd/roles-permissions/style.css"
+                },
+                "audit-logs": {
+                    "composer": "example/laravel-master-core-audit-logs",
+                    "npm": "@itassistance-bd/audit-logs",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "createAuditLogRoutes"
+                    ],
+                    "composer_dependencies": [],
+                    "has_package_migrations": true,
+                    "frontend_styles": "@itassistance-bd/audit-logs/style.css"
+                },
+                "module-manager": {
+                    "composer": "example/laravel-master-core-module-manager",
+                    "npm": "@itassistance-bd/module-manager",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "createModuleManagerRoutes"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation"
+                    ],
+                    "has_package_migrations": false,
+                    "frontend_styles": "@itassistance-bd/module-manager/style.css"
+                },
+                "system-health": {
+                    "composer": "example/laravel-master-core-system-health",
+                    "npm": "@itassistance-bd/system-health",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "createSystemHealthRoutes"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation",
+                        "example/laravel-master-core-roles-permissions"
+                    ],
+                    "has_package_migrations": false,
+                    "frontend_styles": "@itassistance-bd/system-health/style.css"
+                },
+                "notifications": {
+                    "composer": "example/laravel-master-core-notifications",
+                    "npm": "@itassistance-bd/notifications",
+                    "frontend_entrypoint": "auth",
+                    "frontend_exports": [
+                        "createNotificationsRoutes"
+                    ],
+                    "composer_dependencies": [
+                        "example/laravel-master-core-foundation",
+                        "example/laravel-master-core-roles-permissions"
+                    ],
+                    "has_package_migrations": true,
+                    "frontend_styles": "@itassistance-bd/notifications/style.css"
+                },
+                "crud-engine": {
+                    "composer": "example/laravel-master-core-crud-engine",
+                    "npm": "@itassistance-bd/crud-engine",
+                    "frontend_entrypoint": "resource-owned",
+                    "frontend_exports": [
+                        "RegisteredCrudPage",
+                        "useCrudResource"
+                    ],
+                    "composer_dependencies": [],
+                    "has_package_migrations": false,
+                    "frontend_styles": "@itassistance-bd/crud-engine/style.css"
+                }
+            },
+            "shared_npm": "@itassistance-bd/ui",
+            "activation": {
+                "backend": "composer-selection-and-package-discovery",
+                "frontend": "explicit-host-route-imports",
+                "global_automatic_feature_activation": false,
+                "automatic_permission_grants": false,
+                "automatic_migrations": false,
+                "automatic_super_admin_provisioning": false
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,44 @@
+{
+    "name": "@itassistance-bd/ui",
+    "version": "0.1.0",
+    "private": false,
+    "type": "module",
+    "exports": {
+        ".": {
+            "development": "./src/index.ts",
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./styles.css": {
+            "development": "./src/styles/forms.css",
+            "import": "./dist/styles.css"
+        }
+    },
+    "peerDependencies": {
+        "vue": "^3.5.0"
+    },
+    "license": "MIT",
+    "description": "Shared Vue controls and styles for Laravel Master Core.",
+    "style": "./dist/styles.css",
+    "sideEffects": [
+        "./dist/styles.css",
+        "./src/styles/forms.css"
+    ],
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist",
+        "resources/js",
+        "src",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "node ../../../scripts/build-core-packages.mjs @itassistance-bd/ui",
+        "prepack": "npm run build"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org/"
+    }
+}

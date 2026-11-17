@@ -1,0 +1,30 @@
+{
+    "name": "example/laravel-master-core-settings",
+    "description": "Application settings module for Laravel Master Core.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "example/laravel-master-core-foundation": "^0.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MasterCore\\Settings\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MasterCore\\Settings\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasterCore\\Settings\\Providers\\SettingsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

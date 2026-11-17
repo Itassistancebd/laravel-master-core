@@ -1,0 +1,37 @@
+﻿{
+    "compilerOptions": {
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "strict": true,
+        "jsx": "preserve",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "esModuleInterop": true,
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "types": ["vite/client", "vitest/globals"],
+        "skipLibCheck": true,
+        "noEmit": true,
+        "baseUrl": ".",
+        "paths": {
+            "@itassistance-bd/ui": ["packages/core/ui/src/index.ts"],
+            "@itassistance-bd/ui/styles.css": ["packages/core/ui/src/styles/forms.css"],
+            "@itassistance-bd/settings-ui": ["packages/core/settings/resources/js/index.ts"],
+            "@itassistance-bd/auth": ["packages/core/auth/resources/js/index.ts"],
+            "@itassistance-bd/user-management": ["packages/core/user-management/resources/js/index.ts"],
+            "@itassistance-bd/roles-permissions": ["packages/core/roles-permissions/resources/js/index.ts"],
+            "@itassistance-bd/audit-logs": ["packages/core/audit-logs/resources/js/index.ts"],
+            "@itassistance-bd/module-manager": ["packages/core/module-manager/resources/js/index.ts"],
+            "@itassistance-bd/system-health": ["packages/core/system-health/resources/js/index.ts"],
+            "@itassistance-bd/notifications": ["packages/core/notifications/resources/js/index.ts"],
+            "@itassistance-bd/crud-engine": ["packages/core/crud-engine/resources/js/index.ts"]
+        }
+    },
+    "include": [
+        "resources/js/**/*.ts",
+        "packages/core/**/*.ts",
+        "packages/core/**/*.vue"
+    ]
+}

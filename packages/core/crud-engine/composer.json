@@ -1,0 +1,29 @@
+{
+    "name": "example/laravel-master-core-crud-engine",
+    "description": "Opt-in CRUD contracts and query primitives for Laravel Master Core resources.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MasterCore\\CrudEngine\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MasterCore\\CrudEngine\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasterCore\\CrudEngine\\Providers\\CrudEngineServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

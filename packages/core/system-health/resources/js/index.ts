@@ -1,0 +1,1 @@
+export { createSystemHealthRoutes } from './routes';

@@ -1,0 +1,31 @@
+{
+    "name": "example/laravel-master-core-roles-permissions",
+    "description": "Gate-backed roles and permissions for Laravel Master Core.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "example/laravel-master-core-foundation": "^0.1.0",
+        "example/laravel-master-core-user-management": "^0.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MasterCore\\RolesPermissions\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MasterCore\\RolesPermissions\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasterCore\\RolesPermissions\\Providers\\RolesPermissionsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

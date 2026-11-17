@@ -1,0 +1,49 @@
+{
+    "name": "@itassistance-bd/system-health",
+    "version": "0.1.0",
+    "private": false,
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "development": "./resources/js/index.ts",
+            "import": "./dist/index.js"
+        },
+        "./style.css": {
+            "development": "./resources/js/dev-styles.css",
+            "import": "./dist/index.css"
+        }
+    },
+    "peerDependencies": {
+        "vue": "^3.5.0"
+    },
+    "dependencies": {
+        "@itassistance-bd/auth": "^0.1.0",
+        "@itassistance-bd/ui": "^0.1.0",
+        "axios": "^1.11.0",
+        "vue-router": "^4.6.3"
+    },
+    "license": "MIT",
+    "description": "Vue system readiness interface for Laravel Master Core.",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "style": "./dist/index.css",
+    "sideEffects": [
+        "./dist/index.css",
+        "./resources/js/dev-styles.css"
+    ],
+    "files": [
+        "dist",
+        "resources/js",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "node ../../../scripts/build-core-packages.mjs @itassistance-bd/system-health",
+        "prepack": "npm run build"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org/"
+    }
+}

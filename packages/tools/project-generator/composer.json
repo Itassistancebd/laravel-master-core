@@ -1,0 +1,23 @@
+{
+  "name": "example/laravel-master-core-project-generator",
+  "description": "Standalone CLI for safe Laravel Master Core project planning and generation.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": "^8.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "MasterCore\\ProjectGenerator\\": "src/"
+    }
+  },
+  "bin": [
+    "bin/master-core"
+  ],
+  "extra": {
+    "master-core-generator": {
+      "profile_schema": 1,
+      "default_profile": "resources/profiles/master-core-v1.json"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "packages/core/ui",
+        "packages/core/settings",
+        "packages/core/auth",
+        "packages/core/user-management",
+        "packages/core/roles-permissions",
+        "packages/core/audit-logs",
+        "packages/core/module-manager",
+        "packages/core/system-health",
+        "packages/core/notifications",
+        "packages/core/crud-engine"
+    ],
+    "scripts": {
+        "build": "npm run build:packages && vite build",
+        "build:packages": "node scripts/build-core-packages.mjs",
+        "dev": "vite",
+        "test": "npm run test:ui",
+        "typecheck": "vue-tsc --noEmit",
+        "test:ui": "vitest run",
+        "test:e2e": "node scripts/run-playwright-e2e.mjs",
+        "test:e2e:headed": "node scripts/run-playwright-e2e.mjs --headed",
+        "test:e2e:responsive": "node scripts/run-playwright-e2e.mjs --grep @responsive",
+        "test:e2e:report": "playwright show-report"
+    },
+    "dependencies": {
+        "vue": "^3.5.43"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.65.1",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-vue": "^6.0.10",
+        "@vue/test-utils": "^2.4.6",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "jsdom": "^26.1.0",
+        "laravel-vite-plugin": "^2.0.0",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.0",
+        "vitest": "^3.2.4",
+        "vue-tsc": "^3.0.0"
+    }
+}

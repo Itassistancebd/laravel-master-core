@@ -1,0 +1,55 @@
+{
+    "extends":  "../../../tsconfig.json",
+    "compilerOptions":  {
+                            "noEmit":  false,
+                            "declaration":  true,
+                            "emitDeclarationOnly":  true,
+                            "declarationMap":  false,
+                            "sourceMap":  false,
+                            "rootDir":  "./src",
+                            "outDir":  "./dist",
+                            "paths":  {
+                                          "@itassistance-bd/ui":  [
+                                                                  "packages/core/ui/dist/index.d.ts"
+                                                              ],
+                                          "@itassistance-bd/ui/styles.css":  [
+                                                                             "packages/core/ui/dist/styles.css"
+                                                                         ],
+                                          "@itassistance-bd/settings-ui":  [
+                                                                           "packages/core/settings/dist/index.d.ts"
+                                                                       ],
+                                          "@itassistance-bd/auth":  [
+                                                                    "packages/core/auth/dist/index.d.ts"
+                                                                ],
+                                          "@itassistance-bd/user-management":  [
+                                                                               "packages/core/user-management/dist/index.d.ts"
+                                                                           ],
+                                          "@itassistance-bd/roles-permissions":  [
+                                                                                 "packages/core/roles-permissions/dist/index.d.ts"
+                                                                             ],
+                                          "@itassistance-bd/audit-logs":  [
+                                                                          "packages/core/audit-logs/dist/index.d.ts"
+                                                                      ],
+                                          "@itassistance-bd/module-manager":  [
+                                                                              "packages/core/module-manager/dist/index.d.ts"
+                                                                          ],
+                                          "@itassistance-bd/system-health":  [
+                                                                             "packages/core/system-health/dist/index.d.ts"
+                                                                         ],
+                                          "@itassistance-bd/notifications":  [
+                                                                             "packages/core/notifications/dist/index.d.ts"
+                                                                         ],
+                                          "@itassistance-bd/crud-engine":  [
+                                                                           "packages/core/crud-engine/dist/index.d.ts"
+                                                                       ]
+                                      }
+                        },
+    "include":  [
+                    "src/**/*.ts",
+                    "src/**/*.vue"
+                ],
+    "exclude":  [
+                    "src/**/*.test.ts",
+                    "src/**/*.spec.ts"
+                ]
+}
