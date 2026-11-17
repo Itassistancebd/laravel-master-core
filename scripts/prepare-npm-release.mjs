@@ -27,7 +27,7 @@ for (const [name, { directory, path, manifest }] of packages) {
     if (manifest.publishConfig?.access !== 'public' || manifest.publishConfig?.registry !== registry) {
         throw new Error(`${name}: publishConfig must select public access and ${registry}.`);
     }
-    if (manifest.repository?.url !== 'https://github.com/Itassistancebd/laravel-master-core.git'
+    if (manifest.repository?.url !== 'git+https://github.com/Itassistancebd/laravel-master-core.git'
         || manifest.repository?.directory !== directory) {
         throw new Error(`${name}: repository URL or workspace directory metadata is inconsistent.`);
     }
@@ -75,6 +75,8 @@ for (const name of order) {
     }
     const artifact = Array.isArray(packed) ? packed[0] : packed;
     const files = new Set((artifact?.files ?? []).map(({ path: file }) => file));
+    const testFiles = [...files].filter((file) => /\.(?:test|spec)\.[^/]+$/i.test(file));
+    if (testFiles.length > 0) throw new Error(`${name}: test-only files must not be included in the public npm archive (${testFiles.join(', ')}).`);
     const expected = [manifest.exports?.['.']?.import, manifest.exports?.['.']?.types]
         .filter(Boolean)
         .map((file) => file.replace(/^\.\//, ''));

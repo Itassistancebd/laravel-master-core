@@ -34,7 +34,7 @@ for (const [name, { directory, manifest }] of workspaces) {
     if (!name.startsWith('@itassistance-bd/')) errors.push(`${name}: unexpected workspace scope.`);
     if (manifest.private !== false || manifest.license !== 'MIT') errors.push(`${name}: expected public-package metadata and MIT license.`);
     if (manifest.publishConfig?.access !== 'public' || manifest.publishConfig?.registry !== 'https://registry.npmjs.org/') errors.push(`${name}: public npm publish configuration is incomplete.`);
-    if (manifest.repository?.url !== 'https://github.com/Itassistancebd/laravel-master-core.git' || manifest.repository?.directory !== directory) errors.push(`${name}: repository metadata does not identify its monorepo directory.`);
+    if (manifest.repository?.url !== 'git+https://github.com/Itassistancebd/laravel-master-core.git' || manifest.repository?.directory !== directory) errors.push(`${name}: repository metadata does not identify its monorepo directory.`);
     if (manifest.engines?.node !== profile.toolchain.node || manifest.engines?.npm !== profile.toolchain.npm) errors.push(`${name}: engine constraints disagree with the generator profile.`);
     const locked = lock.packages?.[`node_modules/${name}`];
     if (!locked?.link || locked.resolved !== directory) errors.push(`${name}: package-lock workspace link is missing or inconsistent.`);

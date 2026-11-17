@@ -32,6 +32,14 @@ npm.cmd publish --access public --registry=https://registry.npmjs.org/
 
 Review each result before proceeding. No bulk command in this repository publishes packages.
 
+### Controlled GitHub Actions release
+
+The repository includes `.github/workflows/publish-npm-package.yml`, a manual one-package release workflow. It runs only from `main`, requires the exact `PUBLISH_PUBLICLY` confirmation, runs frontend tests, typecheck, identity validation, and package dry-run checks, then checks that the selected immutable version is unused and every required internal npm dependency is already public. It publishes one selected package with public access and provenance, then creates a package-specific Git tag and GitHub Release with generated release notes. The registry dependency check enforces publication order.
+
+Before this workflow can run from GitHub, a maintainer must configure the protected `npm-publication` environment and require its approval. For initial publication, add an npm granular publish token as that environment's `NPM_TOKEN` secret, scoped to the intended packages and with 2FA bypass only if npm requires it for automation. Never put the token in this repository. Once a package exists, npm Trusted Publishing can be configured for that package using organization `Itassistancebd`, repository `laravel-master-core`, workflow filename `publish-npm-package.yml`, and environment `npm-publication`; the workflow requests `id-token: write` and publishes with provenance. Trusted Publisher configuration is per package and must be set in npm's package settings. A local npm session requiring an OTP does not satisfy the Actions secret requirement. The workflow has not been activated or run from GitHub in this checkout.
+
+Current account verification is separate from publication readiness: the authenticated account is an organization owner and its account-level 2FA mode is `auth-and-writes`; npm requires a one-time password for local publication. Organization-wide 2FA enforcement has not been verified. All ten package metadata requests currently return 404, so package publication has not occurred and public consumer installation remains unverified.
+
 ## Composer package snapshots
 
 The twelve Composer source manifests remain under the monorepo. The export tool copies them to an outside-project folder, rewrites only the configured vendor identity and matching internal package references, and writes a snapshot index. It requires a version compatible with all source internal constraints and refuses to overwrite an existing output path.

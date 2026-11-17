@@ -1,0 +1,125 @@
+name: Publish one npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Workspace package to release (dependencies must already be public)
+        required: true
+        type: choice
+        options:
+          - '@itassistance-bd/ui'
+          - '@itassistance-bd/settings-ui'
+          - '@itassistance-bd/auth'
+          - '@itassistance-bd/user-management'
+          - '@itassistance-bd/roles-permissions'
+          - '@itassistance-bd/audit-logs'
+          - '@itassistance-bd/module-manager'
+          - '@itassistance-bd/system-health'
+          - '@itassistance-bd/notifications'
+          - '@itassistance-bd/crud-engine'
+      version:
+        description: Must equal the selected workspace manifest version
+        required: true
+        default: '0.1.0'
+        type: string
+      confirmation:
+        description: Enter PUBLISH_PUBLICLY to authorize this one package release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-package-release-${{ inputs.package }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUBLISH_PUBLICLY'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run check:package-identities
+      - run: npm run release:npm:dry-run -- --report="$RUNNER_TEMP/npm-release-dry-run.json"
+      - name: Check registry and dependency gates
+        run: node scripts/check-npm-release-gate.mjs --name="$PACKAGE_NAME" --version="$PACKAGE_VERSION"
+        env:
+          PACKAGE_NAME: ${{ inputs.package }}
+          PACKAGE_VERSION: ${{ inputs.version }}
+      - name: Refuse duplicate release tag
+        shell: bash
+        run: |
+          slug="${PACKAGE#@itassistance-bd/}"
+          tag="npm-${slug}-v${VERSION}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Release tag ${tag} already exists; refusing to overwrite it." >&2
+            exit 1
+          fi
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ inputs.version }}
+
+  publish:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUBLISH_PUBLICLY'
+    runs-on: ubuntu-latest
+    environment: npm-publication
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci
+      - run: npm run build:packages
+      - name: Recheck immutable version and registry dependencies
+        run: node scripts/check-npm-release-gate.mjs --name="$PACKAGE_NAME" --version="$PACKAGE_VERSION"
+        env:
+          PACKAGE_NAME: ${{ inputs.package }}
+          PACKAGE_VERSION: ${{ inputs.version }}
+      - name: Publish selected public package
+        shell: bash
+        run: |
+          directory="${PACKAGE#@itassistance-bd/}"
+          case "$directory" in
+            ui) workspace='packages/core/ui' ;;
+            settings-ui) workspace='packages/core/settings' ;;
+            auth|user-management|roles-permissions|audit-logs|module-manager|system-health|notifications|crud-engine) workspace="packages/core/$directory" ;;
+            *) echo 'Unknown workspace mapping.' >&2; exit 1 ;;
+          esac
+          cd "$workspace"
+          npm publish --access public --provenance --registry=https://registry.npmjs.org/
+        env:
+          PACKAGE: ${{ inputs.package }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Create immutable source tag and generated release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ inputs.package }}
+          VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          slug="${PACKAGE#@itassistance-bd/}"
+          tag="npm-${slug}-v${VERSION}"
+          git tag -a "$tag" -m "${PACKAGE}@${VERSION}"
+          git push origin "$tag"
+          gh release create "$tag" --verify-tag --title "${PACKAGE}@${VERSION}" --generate-notes

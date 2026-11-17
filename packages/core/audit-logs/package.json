@@ -35,7 +35,9 @@
     "files": [
         "dist",
         "resources/js",
-        "README.md"
+        "README.md",
+        "!**/*.test.*",
+        "!**/*.spec.*"
     ],
     "scripts": {
         "build": "node ../../../scripts/build-core-packages.mjs @itassistance-bd/audit-logs",
@@ -47,7 +49,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/Itassistancebd/laravel-master-core.git",
+        "url": "git+https://github.com/Itassistancebd/laravel-master-core.git",
         "directory": "packages/core/audit-logs"
     },
     "engines": {
