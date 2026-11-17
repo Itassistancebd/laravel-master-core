@@ -1,4 +1,5 @@
-import { copyFile, access, writeFile } from 'node:fs/promises';
+import { copyFile, access, readFile, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -7,70 +8,52 @@ import { build } from 'vite';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, '..');
-const packageOrder = [
-    '@itassistance-bd/ui',
-    '@itassistance-bd/auth',
-    '@itassistance-bd/settings-ui',
-    '@itassistance-bd/user-management',
-    '@itassistance-bd/roles-permissions',
-    '@itassistance-bd/audit-logs',
-    '@itassistance-bd/module-manager',
-    '@itassistance-bd/system-health',
-    '@itassistance-bd/notifications',
-    '@itassistance-bd/crud-engine',
-];
-const packageDirectories = {
-    '@itassistance-bd/ui': 'ui',
-    '@itassistance-bd/auth': 'auth',
-    '@itassistance-bd/settings-ui': 'settings',
-    '@itassistance-bd/user-management': 'user-management',
-    '@itassistance-bd/roles-permissions': 'roles-permissions',
-    '@itassistance-bd/audit-logs': 'audit-logs',
-    '@itassistance-bd/module-manager': 'module-manager',
-    '@itassistance-bd/system-health': 'system-health',
-    '@itassistance-bd/notifications': 'notifications',
-    '@itassistance-bd/crud-engine': 'crud-engine',
-};
-const packageDependencies = {
-    '@itassistance-bd/ui': [],
-    '@itassistance-bd/settings-ui': ['@itassistance-bd/ui'],
-    '@itassistance-bd/auth': ['@itassistance-bd/ui'],
-    '@itassistance-bd/user-management': ['@itassistance-bd/ui', '@itassistance-bd/auth'],
-    '@itassistance-bd/roles-permissions': ['@itassistance-bd/ui', '@itassistance-bd/auth'],
-    '@itassistance-bd/audit-logs': ['@itassistance-bd/ui'],
-    '@itassistance-bd/module-manager': ['@itassistance-bd/ui', '@itassistance-bd/auth'],
-    '@itassistance-bd/system-health': ['@itassistance-bd/ui', '@itassistance-bd/auth'],
-    '@itassistance-bd/notifications': ['@itassistance-bd/ui'],
-    '@itassistance-bd/crud-engine': ['@itassistance-bd/ui'],
-};
-
+const rootManifest = JSON.parse(await readFile(join(projectRoot, 'package.json'), 'utf8'));
+const packageDirectories = new Map();
+for (const workspace of rootManifest.workspaces ?? []) {
+    const packageRoot = resolve(projectRoot, workspace);
+    const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'));
+    packageDirectories.set(manifest.name, packageRoot);
+}
+const packageOrder = [...packageDirectories.keys()];
 const requestedPackages = process.argv.slice(2);
-if (requestedPackages.some((name) => !packageOrder.includes(name))) {
+if (requestedPackages.some((name) => !packageDirectories.has(name))) {
     throw new Error('Unknown Core npm package requested for build.');
 }
 
 // Build local declaration dependencies before a package so it can be packed from a clean checkout.
 const buildSet = new Set();
+const visiting = new Set();
+const buildOrder = [];
 const includeDependencies = (packageName) => {
-    for (const dependency of packageDependencies[packageName]) {
-        includeDependencies(dependency);
+    if (buildSet.has(packageName)) return;
+    if (visiting.has(packageName)) throw new Error(`Workspace dependency cycle detected at ${packageName}.`);
+    visiting.add(packageName);
+    const manifestPath = join(packageDirectories.get(packageName), 'package.json');
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    for (const dependency of Object.keys(manifest.dependencies ?? {})) {
+        if (packageDirectories.has(dependency)) includeDependencies(dependency);
     }
+    visiting.delete(packageName);
     buildSet.add(packageName);
+    buildOrder.push(packageName);
 };
 for (const packageName of requestedPackages.length > 0 ? requestedPackages : packageOrder) {
     includeDependencies(packageName);
 }
-const targets = packageOrder.filter((name) => buildSet.has(name));
+const targets = buildOrder;
+const packageNames = new Set(packageOrder);
 
 const declarationCompiler = join(projectRoot, 'node_modules/vue-tsc/bin/vue-tsc.js');
 const external = (id) => id === 'vue'
     || id === 'vue-router'
     || id === 'axios'
-    || id.startsWith('@itassistance-bd/');
+    || packageNames.has(id);
 
 for (const packageName of targets) {
-    const packageRoot = join(projectRoot, 'packages/core', packageDirectories[packageName]);
-    const isUi = packageName === '@itassistance-bd/ui';
+    const packageRoot = packageDirectories.get(packageName);
+    const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'));
+    const isUi = manifest.exports?.['./styles.css'] !== undefined;
     const sourceRoot = isUi ? 'src' : 'resources/js';
     const entry = join(packageRoot, sourceRoot, 'index.ts');
     const outputDirectory = join(packageRoot, 'dist');

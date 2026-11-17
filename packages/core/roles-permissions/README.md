@@ -39,3 +39,14 @@ Because host users have no foreign key, deleting users may leave assignment rows
 ## Tests
 
 From the project root, run the `Core Roles & Permissions` PHPUnit suite, then the full suite, `npm run typecheck`, `npm run test:ui`, and `npm run build -- --emptyOutDir false`. PHPUnit uses the test environment's isolated SQLite `:memory:` database; these tests do not apply migrations to the configured host database.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/roles-permissions
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

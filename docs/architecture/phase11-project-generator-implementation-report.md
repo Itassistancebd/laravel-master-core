@@ -116,7 +116,33 @@ The generator now also passes a clean local Composer consumer check: package ins
 
 The generator suite has **20 tests / 52 assertions**, including invalid profile identity/runtime/export/dependency cases, invalid HTTPS registry configuration, staged install failure recovery, missing target safety, and incomplete generated-project diagnosis. The full repository run passed **198 tests / 980 assertions**. The npm UI suite, TypeScript check, package/host build, and six Playwright regressions also passed. External registry setup remains blocked until the publisher supplies owned namespaces and trusted registry URLs. See the [Phase 10 identity/release proposal](phase10-package-identity-and-release-proposal.md) and [campaign report](core-completion-campaign-2026-11-17.md).
 
+## Integrated distribution implementation follow-up (2026-11-17)
+
+The generator now derives external package identities from a local schema 2 trust configuration: one Composer vendor, explicit HTTPS Composer repository URLs, one npm scope, and one HTTPS npm registry. The default source profile is validated against the monorepo before the configured identity mapping is applied. This keeps the source manifests intact while generated Composer/npm manifests use the configured external names and ordinary registry dependencies. Configuration values are not treated as proof of namespace ownership or package availability.
+
+Generated frontend `package.json` now records the supported Node/npm engines. Registry resolution failures identify the relevant Composer or npm source checks and preserve the failed staging directory. The local Composer snapshot exporter prepares twelve root-manifest package directories for separately reviewed distribution setup. It does not create Git history, repositories, tags, or releases.
+
+Generator tests now cover configurable identities, schema 2 configuration, generated npm engine metadata, identity consistency, and existing fake-install safety. No real external consumer install or generated Laravel host is claimed while the identities and packages remain unverified/unpublished. Phase 11 remains **PARTIAL**. See the [integrated distribution report](phase10-11-integrated-distribution.md).
+
+The integrated implementation regression run passed **22 focused Generator tests / 63 assertions** and the full PHP suite (**200 tests / 991 assertions**), frontend suite (**19 files / 79 tests**), TypeScript typecheck, production build, and ten workspace `npm pack --dry-run` prepack builds. All 13 source Composer manifests validated. A local exported Generator snapshot installed in an isolated Composer fixture with `symlink=false`; its CLI and configured-identity dry-run passed. That fixture did not resolve from Packagist or generate a real Laravel host. See the integrated report for the separate local npm tarball check and registry blockers.
+
+## Final distribution verification (2026-11-18)
+
+The source profile continues to carry all ten verified `@itassistance-bd/*` identities; schema 2 still requires an explicit Composer vendor and HTTPS repository list, so no unverified Composer identity is trusted by default. Npm account `itassistancebd` was verified as an organization owner with account-level `auth-and-writes` 2FA. All ten packages still return registry 404. Local npm tarball install/import and all twelve Composer snapshot checks passed. A real public registry install and generated Laravel host install are not claimed. The ZIP-less Composer consumer environment is recorded in the [integrated distribution report](phase10-11-integrated-distribution.md). Phase 11 remains **PARTIAL** until the trusted Composer identity/packages are available and the generated host is installed and bootstrapped from a clean consumer.
+
 
 ## Final verification update - 2026-11-17
 
 The local workspace npm scope and generator profile consistently use `@itassistance-bd`. `npm.cmd run test` passed 19 files / 79 tests; `npm.cmd run typecheck`, production build, and all ten npm package dry runs passed. Full Playwright passed 8 tests and responsive Playwright passed 5 tests, each with one worker and a separate temporary SQLite database. Composer's lock profile metadata now matches current npm package names; all 13 Composer manifests validate. The identity gates and real generated Laravel consumer remain unresolved; see the [Phase 10 identity migration report](phase10-package-identity-migration-record.md).
+
+## Master release campaign verification update - 2026-11-18
+
+The current local release evidence supersedes older ZIP and local-consumer limitations in this report. The existing XAMPP2 PHP 8.4.27 `php_zip.dll` loads as Zip 1.22.8 / Libzip 1.12 when requested by the ignored project runtime configuration. The project PHP/Composer wrapper and Playwright PHP invocations now apply that option without modifying php.ini or global PATH. A clean Composer consumer with all twelve local snapshots resolved third-party packages from Packagist using `--prefer-dist`, extracted 96 archives, and produced autoload files. This validates ZIP extraction for local snapshots plus public third-party archives only.
+
+The npm owner account and team membership were rechecked; account 2FA mode is `auth-and-writes`. Organization-wide 2FA enforcement remains unverified. All ten public npm package endpoints return 404. The Packagist public vendor listing returned zero packages and the candidate package endpoint returned 404; neither result proves authenticated vendor ownership or maintainer access.
+
+The full PHP suite passed 200 tests / 991 assertions, including 22 Generator tests / 63 assertions. Frontend tests passed 19 files / 79 tests; TypeScript, build, source Composer validation (13 manifests), npm identity consistency, ten npm dry-run packs, and ten local tarball imports passed. The local installed Generator binary help/planning dry-run passed. A manually assembled Laravel 12.73.0 fixture from the official scaffold plus local snapshots passed package discovery and `artisan --version`; a public-source Generator-created host is not claimed.
+
+The browser runner was made fail-closed for isolated runs: it checks SQLite connection, exact unique temp DB path, blank DB_URL, regular non-symlink DB file, and run-specific cache paths before invoking migration. Responsive Chromium passed 5/5 tests and the full suite passed 8/8, with 155 and 171 PNG screenshots respectively. No configured MySQL database or live roles were used. See the Phase 12 report for artifact paths and checks.
+
+Phase 11 remains **PARTIAL** while the candidate Composer vendor and trusted external package sources are unverified/unpublished. No packages, repositories, commits, or pushes were created.

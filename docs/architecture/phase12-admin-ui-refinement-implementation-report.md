@@ -82,3 +82,23 @@ The `test` script was added as an alias for the existing `test:ui` Vitest suite 
 - Super Admin ID 1 and configured live role grants were not modified. No commit, push, or deployment was performed.
 - Page-state coverage includes the listed routes and the representative responsive workflows above. The isolated cookie-session driver cannot exercise revoking a real database-backed browser session; it intentionally returns 501 and shows the supported fallback.
 - Pages named Packages and Generator were explicitly checked against the SPA route and navigation registration and do not exist as Admin screens; their absence is not a browser acceptance claim for a future UI.
+
+## Final responsive browser revalidation - 2026-11-18
+
+The final release campaign reran both existing Playwright suites after adding a pre-migration isolation guard and moving Playwright result/report output to a unique run directory.
+
+| Command | Result | Evidence |
+|---|---|---|
+| `npm.cmd run test:e2e:responsive` | **PASS - 5 tests** | 17 Admin page/state routes exercised at desktop 1440x900, tablet 768x1024, and mobile 390x844; route-level JavaScript, console, API, overflow, primary content, and mobile navigation assertions passed. |
+| `npm.cmd run test:e2e` | **PASS - 8 tests** | Includes route sweep, navigation/filter/dialog usability, Categories CRUD/query/RBAC, Settings persistence, dashboard/User import journey, export behavior, and access denial. |
+
+The responsive run saved **155 PNG screenshots** and the full run saved **171 PNG screenshots**. Each run also saved its own Playwright HTML report and one fresh temporary SQLite database:
+
+- Responsive: [`artifacts/browser-qa/2026-11-17T185206463Z-004700/`](../../artifacts/browser-qa/2026-11-17T185206463Z-004700/), report `playwright-report/index.html`.
+- Full suite: [`artifacts/browser-qa/2026-11-17T185654689Z-6d055c/`](../../artifacts/browser-qa/2026-11-17T185654689Z-6d055c/), report `playwright-report/index.html`.
+
+Before invoking `artisan migrate`, the runner now checks that DB_CONNECTION is exactly `sqlite`, DB_URL is empty, DB_DATABASE resolves to a fresh non-symlink file inside the unique OS temporary directory, and all Laravel cache paths are within this run's unique cache directory. It also isolates Playwright screenshots, test-results, and HTML report paths. The first attempt with absolute Windows framework-cache paths was refused during bootstrap before migrations; after correcting those paths to Laravel's required run-specific relative cache directory, both suites passed. No migration or seeder was run against the configured MySQL database.
+
+Before these runs, all nine application/package migration files were inspected. They use Laravel's default connection and schema builder; none selects another connection, issues raw connection SQL, drops a database, or truncates a table. `DatabaseSeeder` was inspected and not invoked. The only fixture preparation was `tests/e2e/prepare-database.php` against the guarded temporary SQLite connection.
+
+No unexpected JavaScript/page errors, console errors, API failures, or page-width overflow remained. Expected 401/403 responses and the existing isolated cookie-session 501 are handled by explicit assertions. The prior Dashboard composition remains unchanged.

@@ -23,6 +23,7 @@ final class Application
 
             return match ($command) {
                 'new' => $this->newProject($options),
+                'template' => $this->templateProject($options),
                 'plan' => $this->planFile($options),
                 'doctor' => $this->doctor($options),
                 'help', '--help', '-h' => $this->help(),
@@ -33,6 +34,42 @@ final class Application
 
             return 1;
         }
+    }
+
+    private function templateProject(array $options): int
+    {
+        $target = $options['_'][0] ?? null;
+        $sourceRoot = $options['source-root'] ?? null;
+        $phpBinary = $options['php-binary'] ?? PHP_BINARY;
+        $composerPhar = $options['composer-phar'] ?? null;
+        $composerExecutable = $options['composer-executable'] ?? null;
+        $nodeBinary = $options['node-binary'] ?? null;
+        $npmCli = $options['npm-cli'] ?? null;
+        if (! is_string($target) || $target === '' || ! is_string($sourceRoot) || $sourceRoot === '') {
+            throw new RuntimeException('Usage: master-core template <target> --source-root=<monorepo> --composer-phar=<composer.phar> --node-binary=<node.exe> --npm-cli=<npm-cli.js>.');
+        }
+        foreach ([$phpBinary, $nodeBinary, $npmCli] as $executable) {
+            if (! is_string($executable) || $executable === '' || ! is_file($executable)) {
+                throw new RuntimeException('Template generation requires valid PHP, Node.js, and npm CLI paths.');
+            }
+        }
+        $composerCommand = is_string($composerPhar) && $composerPhar !== ''
+            ? [$phpBinary, $composerPhar]
+            : (is_string($composerExecutable) && is_file($composerExecutable) ? [$composerExecutable] : []);
+        if ($composerCommand === []) { throw new RuntimeException('Template generation requires a valid Composer PHAR or executable path.'); }
+
+        $result = (new ProjectInstaller(new NativeProcessExecutor))->installMonorepoTemplate(
+            $target,
+            $sourceRoot,
+            $composerCommand,
+            [$nodeBinary, $npmCli],
+            $phpBinary,
+            is_string($options['source-ref'] ?? null) ? $options['source-ref'] : 'main',
+            is_string($options['source-commit'] ?? null) ? $options['source-commit'] : '',
+        );
+        $this->print(['installed' => true, 'mode' => 'existing-monorepo-template', 'result' => $result], isset($options['json']));
+
+        return 0;
     }
 
     private function newProject(array $options): int
@@ -46,24 +83,41 @@ final class Application
         $profilePath = $options['profile'] ?? dirname(__DIR__, 2).'/resources/profiles/master-core-v1.json';
         $profile = (new ProfileLoader)->load($profilePath, $sourceRoot);
         [$features, $frontends, $authShell] = $this->selections($options, $profile->features());
-        $plan = (new ProjectPlanner)->build($profile, $features, $frontends, $authShell, $options['core-version'] ?? null);
         $composerBinary = 'composer';
         $npmBinary = 'npm';
-        (new Preflight)->assertSupported($profile, $plan, $composerBinary, $npmBinary);
 
         if (isset($options['dry-run'])) {
+            if (isset($options['composer-vendor']) xor isset($options['npm-scope'])) {
+                throw new RuntimeException('Dry-run identity overrides require both --composer-vendor and --npm-scope.');
+            }
+            if (isset($options['composer-vendor'], $options['npm-scope'])) {
+                $profile = $profile->withDistributionIdentity($options['composer-vendor'], $options['npm-scope']);
+            }
+            $plan = (new ProjectPlanner)->build($profile, $features, $frontends, $authShell, $options['core-version'] ?? null);
+            (new Preflight)->assertSupported($profile, $plan, $composerBinary, $npmBinary);
             TargetPath::validate($target);
-            $output = ['target' => $target, 'dry_run' => true, 'plan' => $plan->toArray(), 'registry_installation' => 'requires explicit verified registry configuration'];
+            $output = [
+                'target' => $target,
+                'dry_run' => true,
+                'plan' => $plan->toArray(),
+                'identity_status' => isset($options['composer-vendor']) ? 'configured for planning only; identity ownership is not verified by the generator' : 'bundled placeholder identities; pass explicit namespace overrides for an external-name plan',
+                'registry_installation' => 'requires explicit verified registry configuration',
+            ];
             $this->print($output, isset($options['json']));
 
             return 0;
         }
 
+        $trusted = TrustedSources::fromUserConfig($options['trusted-config'] ?? null);
+        $profile = $trusted->profileWithDistributionIdentity($profile);
+        $plan = (new ProjectPlanner)->build($profile, $features, $frontends, $authShell, $options['core-version'] ?? null);
+        $trusted->assertTrusted($profile, $plan);
+        (new Preflight)->assertSupported($profile, $plan, $composerBinary, $npmBinary);
+
         if (! $this->confirmInstall($plan, $options)) {
             throw new RuntimeException('Installation cancelled before creating staging files.');
         }
 
-        $trusted = TrustedSources::fromUserConfig($options['trusted-config'] ?? null);
         $result = (new ProjectInstaller(new NativeProcessExecutor))->install(
             $target,
             $plan,
@@ -90,6 +144,12 @@ final class Application
         }
         $profilePath = $options['profile'] ?? dirname(__DIR__, 2).'/resources/profiles/master-core-v1.json';
         $profile = (new ProfileLoader)->load($profilePath, $options['source-root'] ?? $this->findSourceRoot());
+        if (isset($options['composer-vendor']) xor isset($options['npm-scope'])) {
+            throw new RuntimeException('Identity overrides require both --composer-vendor and --npm-scope.');
+        }
+        if (isset($options['composer-vendor'], $options['npm-scope'])) {
+            $profile = $profile->withDistributionIdentity($options['composer-vendor'], $options['npm-scope']);
+        }
         $plan = (new ProjectPlanner)->build(
             $profile,
             $selection['backend_features'] ?? [],

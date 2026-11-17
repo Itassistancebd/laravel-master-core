@@ -2,6 +2,10 @@
 
 > **Distribution readiness:** PARTIAL. Composer `example/` identities remain placeholders pending vendor verification. npm manifests use the owner-confirmed `@itassistance-bd` scope, but external organization ownership was not independently verified. See the [identity migration record](phase10-package-identity-migration-record.md).
 
+> **Global CLI readiness:** The local source includes a Windows installer and `master` command, but these files are not on the published GitHub branch. `master new` uses the Phase 11 monorepo-template installer to copy the existing Laravel app. Internal packages resolve from included relative paths/workspaces; normal Composer/npm registries supply third-party dependencies. Fresh-PC installation requires the reviewed source update to reach GitHub `main`. See the [global CLI and monorepo distribution architecture](global-cli-and-monorepo-distribution.md).
+
+> **Distribution policy update:** Earlier sections describe registry-backed internal package installation and remain reference material for the Phase 11 standalone feature-selection Generator. The global template installer resolves internal Core packages from the monorepo and uses registries for third-party dependencies only.
+
 ## Package selection contract
 
 The Composer entry package is `example/laravel-master-core` and is a metapackage. It requires Laravel 12, PHP 8.2+, and the Foundation package. Its `extra.master-core` metadata has profile schema version `1`; it lists the baseline, optional feature package names, npm package names, direct Composer dependencies, and whether the feature owns migrations. Phase 11's Project Generator should read this metadata as the source for package selection and dependency resolution.

@@ -36,18 +36,6 @@ DB::transaction(function () use ($adminEmail, $adminPassword, $viewerEmail, $vie
         'is_active' => true,
     ]);
 
-    foreach (range(1, 31) as $index) {
-        $name = 'QA Category '.str_pad((string) $index, 2, '0', STR_PAD_LEFT);
-        DB::table('categories')->insert([
-            'name' => $name,
-            'slug' => 'qa-category-'.str_pad((string) $index, 2, '0', STR_PAD_LEFT),
-            'description' => 'Isolated browser QA fixture.',
-            'status' => $index % 2 === 0 ? 'inactive' : 'active',
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-    }
-
     $role = Role::query()->forceCreate([
         'name' => 'Core Super Admin',
         'role_key' => 'core-super-admin',

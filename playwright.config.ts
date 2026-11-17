@@ -7,11 +7,11 @@ export default defineConfig({
     workers: 1,
     timeout: 60_000,
     expect: { timeout: 10_000 },
-    outputDir: './test-results',
+    outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR ?? './test-results',
     preserveOutput: 'always',
     reporter: [
         ['list'],
-        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['html', { outputFolder: process.env.PLAYWRIGHT_HTML_OUTPUT_DIR ?? 'playwright-report', open: 'never' }],
     ],
     use: {
         ...devices['Desktop Chrome'],

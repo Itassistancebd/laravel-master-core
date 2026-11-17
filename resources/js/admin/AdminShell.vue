@@ -34,7 +34,6 @@ const navigationExpanded = computed(() => window.matchMedia('(max-width: 760px)'
 
 const items: NavItem[] = [
     { label: 'Dashboard', to: '/app', ability: null, icon: 'grid', group: 'Workspace' },
-    { label: 'Categories', to: '/app/categories', ability: 'categories.view', icon: 'layers', group: 'Workspace' },
     { label: 'Users', to: '/app/users', ability: 'users', icon: 'users', group: 'Workspace' },
     { label: 'Roles', to: '/app/roles', ability: 'roles', icon: 'shield', group: 'Workspace' },
     { label: 'Permissions', to: '/app/permissions', ability: 'permissions', icon: 'key', group: 'Workspace' },
@@ -50,8 +49,8 @@ const navigationGroups = computed(() => (['Workspace', 'System', 'Account'] as c
     .map((label) => ({ label, items: visibleItems.value.filter((item) => item.group === label) }))
     .filter((group) => group.items.length > 0));
 const workspaceItems = computed(() => navigationGroups.value.find((group) => group.label === 'Workspace')?.items ?? []);
-const standaloneWorkspaceItems = computed(() => workspaceItems.value.filter((item) => item.to === '/app' || item.to === '/app/categories'));
-const userManagementItems = computed(() => workspaceItems.value.filter((item) => item.to !== '/app' && item.to !== '/app/categories'));
+const standaloneWorkspaceItems = computed(() => workspaceItems.value.filter((item) => item.to === '/app'));
+const userManagementItems = computed(() => workspaceItems.value.filter((item) => item.to !== '/app'));
 const userManagementActive = computed(() => userManagementItems.value.some((item) => route.path.startsWith(item.to)));
 const pageSearchResults = computed(() => {
     const query = pageSearchQuery.value.trim().toLocaleLowerCase();
@@ -100,7 +99,6 @@ onMounted(async () => {
             modules: permissions.has('view-modules'),
             health: permissions.has('view-system-health'),
             settings: permissions.has('view-settings'),
-            'categories.view': permissions.has('categories.view'),
         };
     } catch { /* Protected pages remain usable if the dashboard summary endpoint is unavailable. */ }
     await loadNotifications();

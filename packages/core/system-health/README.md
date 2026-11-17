@@ -44,3 +44,14 @@ npm run build -- --emptyOutDir false
 ```
 
 Before production acceptance, test the read-only probe and failure handling against an explicitly isolated MySQL 8 database using the target least-privilege application account. Review the DB driver's connect timeout, connection limits, proxy/session/RBAC dependencies, and complete authenticated browser checks. Do not point acceptance tests at configured user data or run application migrations for this package.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/system-health
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

@@ -1,24 +1,16 @@
 #!/usr/bin/env php
 <?php
 
-$autoloadCandidates = [dirname(__DIR__, 4).'/vendor/autoload.php', dirname(__DIR__, 3).'/autoload.php'];
-foreach ($autoloadCandidates as $autoload) {
-    if (is_file($autoload)) {
-        require $autoload;
-        break;
-    }
-}
-if (! class_exists(MasterCore\ProjectGenerator\Console\Application::class)) {
-    // Permit direct checkout execution before Composer's workspace autoloader is regenerated.
-    spl_autoload_register(static function (string $class): void {
-        $prefix = 'MasterCore\\ProjectGenerator\\';
-        if (str_starts_with($class, $prefix)) {
-            $file = dirname(__DIR__).'/src/'.str_replace('\\', DIRECTORY_SEPARATOR, substr($class, strlen($prefix))).'.php';
-            if (is_file($file)) {
-                require $file;
-            }
+// The generator intentionally loads only its own PHP-only namespace. A parent
+// checkout's vendor/autoload.php may enforce a different application's PHP lock.
+spl_autoload_register(static function (string $class): void {
+    $prefix = 'MasterCore\\ProjectGenerator\\';
+    if (str_starts_with($class, $prefix)) {
+        $file = dirname(__DIR__).'/src/'.str_replace('\\', DIRECTORY_SEPARATOR, substr($class, strlen($prefix))).'.php';
+        if (is_file($file)) {
+            require $file;
         }
-    });
-}
+    }
+});
 
 exit((new MasterCore\ProjectGenerator\Console\Application)->run($argv));

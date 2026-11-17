@@ -1,5 +1,7 @@
 # Core Completion Campaign Report
 
+> **Current product note:** The Categories pilot described below has since been removed from the current product. Its historical migration is retained; no existing database data was deleted.
+
 **Date:** 2026-11-17
 **Overall:** **PARTIAL — do not start Phase 16 yet.**
 **Scope:** Campaign Phases 4, 6, 8, 10, 11, 12, and 14. No Plugin System implementation was started.
@@ -134,3 +136,28 @@ The local npm scope has since been migrated to owner-confirmed `@itassistance-bd
 The previous identity follow-up is superseded by final checks in the [Phase 10 identity migration report](phase10-package-identity-migration-record.md). Composer `--lock` refreshed the stale cached npm profile metadata with zero package operations. Windows child-process execution was the cause of the original `spawn EPERM`; with local child execution permitted, the frontend suite (19 files / 79 tests), build, all ten package dry runs, and both Playwright suites (8 full / 5 responsive) pass. Browser runs used separate temporary SQLite databases and saved 86 and 78 screenshots. The PHP suite passes 198 tests / 980 assertions; all 13 Composer manifests validate; Project Generator passes 20 tests / 52 assertions.
 
 Public GitHub API confirms organization `Itassistancebd` but lists no public repositories. npm ownership could not be verified (organization page HTTP 403; registry evidence is not proof of control). Packagist search returned zero packages for the candidate vendor, which does not establish availability or ownership. No real generated consumer was installed because trusted identities/registries remain unresolved. Phases 10 and 11 remain PARTIAL; campaign completion is withheld and Phase 16 must not start.
+
+
+## Integrated distribution implementation follow-up - 2026-11-17
+
+Phase 10/11 local implementation added a configurable Composer vendor/npm scope transform for generated manifests, schema 2 trusted-source configuration, npm repository/engine metadata for all ten workspaces, dependency-driven package build ordering, registry failure guidance, and a local exporter for twelve Composer package snapshots with root-level manifests. Source Composer identities remain placeholders because Packagist ownership has not been verified. The npm organization, publish permission, enforced 2FA, and ten package names still require account/online registry checks.
+
+No repositories or packages were created or published. The Composer exporter produces source snapshots without package Git history; a history-preserving split requires a separately reviewed release setup. The trusted-source file has not been created. Real Composer/npm consumer installation and generated Laravel host acceptance remain blocked. Phase 10 and Phase 11 remain **PARTIAL**, the campaign remains incomplete, and Phase 16 must not start. See the [integrated distribution implementation report](phase10-11-integrated-distribution.md) for exact configuration, test results, and remaining actions.
+
+## Phase 10 & 11 distribution implementation update — 2026-11-18
+
+The local release-preparation work is implemented and exercised. The npm release script built and dry-run packed all ten `@itassistance-bd/*` packages in dependency order; a clean temporary npm consumer installed/imported all ten local tarballs without workspace links. All ten live package-name lookups still returned 404, so public npm installation remains BLOCKED and no packages were published.
+
+The Composer exporter generated twelve root-manifest snapshots using `itassistance-bd` only as a candidate local fixture. All twelve snapshots and all thirteen source manifests passed Composer validation. A clean temporary Composer consumer resolved/installed all twelve local snapshots. A manually assembled Laravel 12.73.0 fixture installed them with third-party dependencies, completed Artisan package discovery, and returned its framework version. This was not an end-to-end generator installation from public trusted sources. Packagist vendor ownership remains UNVERIFIED.
+
+The account `itassistancebd` was verified as an npm organization owner with account 2FA mode `auth-and-writes`; organization-wide enforcement remains unverified. PHP 8.4.27 tests passed (200 tests/991 assertions; focused generator 22/63). Frontend tests passed (19 files/79 tests), typecheck and production build passed, and generated npm/Composer artifact checks passed. Playwright was not run in this task because its existing scripts trigger migrations; no migrations or seeders were run.
+
+Phase 10 and Phase 11 remain **PARTIAL** pending verified Packagist ownership, public package availability, trusted-source configuration, and a real generated consumer install through those external sources. Phase 16 remains **not started**. Full commands, per-package matrices, artifact locations, local consumer evidence, and limitations are recorded in the [integrated distribution implementation report](phase10-11-integrated-distribution.md). No commit or push was made.
+
+## Final integrated release verification - 2026-11-18
+
+Local source and release checks pass: PHP 8.4.27 suite 200/991; focused Project Generator 22/63; npm tests 19 files/79; typecheck and production build; Composer validate for all 13 source manifests; package identity consistency; all ten npm pack dry-runs; and a clean local npm tarball install/import for all ten packages. Composer exported twelve snapshots; all installed in an isolated local path consumer. The newly enabled project-local ZIP extension allowed Composer `--prefer-dist` to extract 96 third-party archives.
+
+Registry identity remains unresolved: the npm owner account is authenticated and an organization owner, with account-level `auth-and-writes` 2FA, but organization-wide enforcement could not be checked from CLI. Every npm package endpoint returned 404. Packagist lists zero public packages under the candidate vendor and the candidate Core package endpoint returns 404; the account-to-vendor maintainer relationship remains unverified.
+
+Responsive browser QA passed 5/5, full Playwright passed 8/8, and the manually assembled Laravel 12.73.0 local snapshot fixture passed package discovery and version output. These checks do not constitute public registry installs or a generator-created host from verified external sources. Phase 10 and Phase 11 remain **PARTIAL**; Phase 16 remains not started.

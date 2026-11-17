@@ -25,3 +25,14 @@ The Auth SPA composes the package route records under `/app/users`; the API defa
 The package's feature tests use PHPUnit's SQLite `:memory:` database. The migration-specific rollback check creates its own isolated in-memory SQLite connection. Run `php artisan test --testsuite="Core User Management"`, then the full PHP suite, `npm run typecheck`, `npm run test:ui`, and `npm run build -- --emptyOutDir false` from the project root. These checks do not require migrating the configured application database.
 
 See the [approved Phase 5 proposal](../../../docs/architecture/phase5-user-management-proposal.md) and [completion report](../../../docs/architecture/phase5-user-management-completion.md).
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/user-management
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

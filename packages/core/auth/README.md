@@ -41,3 +41,14 @@ See [setup](../../../docs/architecture/phase4-auth-setup.md) and [host integrati
 ## Verification
 
 From the repository root, use the PHP 8.4 CLI and run `php artisan test`, `npm run typecheck`, `npm run test:ui`, and `npm run build -- --emptyOutDir false`. The tests use SQLite `:memory:` and do not touch the configured host database.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/auth
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

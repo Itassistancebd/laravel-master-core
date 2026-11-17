@@ -24,7 +24,11 @@
         "test:e2e": "node scripts/run-playwright-e2e.mjs",
         "test:e2e:headed": "node scripts/run-playwright-e2e.mjs --headed",
         "test:e2e:responsive": "node scripts/run-playwright-e2e.mjs --grep @responsive",
-        "test:e2e:report": "playwright show-report"
+        "test:e2e:report": "playwright show-report",
+        "php:check": "node scripts/check-php-runtime.mjs",
+        "release:npm:dry-run": "node scripts/prepare-npm-release.mjs",
+        "validate:npm:local-consumer": "node scripts/validate-npm-local-consumer.mjs",
+        "check:package-identities": "node scripts/check-package-identities.mjs"
     },
     "dependencies": {
         "vue": "^3.5.43"

@@ -8,7 +8,6 @@ const viewports = [
 
 const pages = [
     { name: 'dashboard', path: '/app', heading: 'Good morning|Good afternoon|Good evening' },
-    { name: 'categories', path: '/app/categories', heading: 'Categories' },
     { name: 'users-list', path: '/app/users', heading: 'Users' },
     { name: 'users-create', path: '/app/users/create', heading: 'Create user' },
     { name: 'users-trash', path: '/app/users/trash', heading: 'Trash' },
@@ -96,7 +95,7 @@ test('every registered Admin screen renders at desktop, tablet and mobile @respo
     expect(unexpectedConsoleErrors, 'No unexpected browser console errors on Admin routes').toEqual([]);
 });
 
-test('responsive Admin navigation, page search, filters and dialogs remain usable @responsive', async ({ page }, testInfo) => {
+test('responsive Admin navigation does not expose the removed Categories feature @responsive', async ({ page }) => {
     test.setTimeout(180_000);
     await login(page, 'admin');
     for (const viewport of viewports) {
@@ -106,23 +105,18 @@ test('responsive Admin navigation, page search, filters and dialogs remain usabl
         if (viewport.width <= 760) {
             await page.getByRole('button', { name: 'Expand navigation' }).click();
             await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
-            await page.getByRole('link', { name: 'Categories' }).click();
-            await expect(page).toHaveURL(/\/app\/categories$/);
+            await expect(page.getByRole('link', { name: 'Categories' })).toHaveCount(0);
+            await page.getByRole('button', { name: 'User Management' }).click();
+            await page.getByRole('link', { name: 'Users', exact: true }).click();
+            await expect(page).toHaveURL(/\/app\/users$/);
         } else {
             await page.getByRole('button', { name: 'Search pages' }).click();
             const search = page.locator('.mc-admin__search-field input');
             await search.fill('Categories');
-            await page.getByRole('link', { name: 'Categories' }).last().click();
-            await expect(page).toHaveURL(/\/app\/categories$/);
+            await expect(page.getByRole('link', { name: 'Categories' })).toHaveCount(0);
+            await search.fill('Users');
+            await page.getByRole('link', { name: 'Users', exact: true }).last().click();
+            await expect(page).toHaveURL(/\/app\/users$/);
         }
-
-        await page.getByRole('combobox', { name: 'Status' }).selectOption('inactive');
-        await expect(page.getByRole('region', { name: 'Data table' }).getByText('QA Category 02')).toBeVisible();
-        await page.getByRole('button', { name: 'Add Category' }).click();
-        const form = page.locator('.mc-admin__content form.grid.gap-4').nth(1);
-        await expect(form).toBeVisible();
-        await captureScreenshot(page, testInfo, `admin-categories-dialog-${viewport.name}`);
-        await form.getByRole('button', { name: 'Cancel' }).click();
-        await expect(form).toBeHidden();
     }
 });

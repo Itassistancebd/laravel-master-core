@@ -56,3 +56,14 @@ The package schedules no cleanup. An operator may explicitly run `php artisan ma
 ## Upgrade and verification
 
 The package uses a ULID primary key, bounded polymorphic recipient identifiers, allowlisted event keys, JSON display data, UTC timestamps, and indexes for recipient timeline and unread queries. SQLite `:memory:` tests cover package behavior; supported MySQL versions still require an isolated deployment migration/query check, particularly for composite index lengths and JSON behavior. Test with the host's configured user model/morph map and confirm the package migration is scheduled separately. Never use package discovery or tests as authorization to migrate the configured application database.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/notifications
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

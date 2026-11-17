@@ -30,6 +30,7 @@ Thumbs.db
 # Local environment files (keep the committed example template)
 .env.*
 !.env.example
+/.php-runtime.local.json
 
 # Credentials, private keys, and local database exports
 *.pem

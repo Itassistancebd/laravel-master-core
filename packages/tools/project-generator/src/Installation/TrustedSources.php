@@ -28,21 +28,78 @@ final readonly class TrustedSources
             throw new InstallationException('Trusted registry configuration is invalid JSON.', previous: $exception);
         }
 
+        if (($data['schema_version'] ?? null) === 2) {
+            if (! is_array($data['composer_repositories'] ?? null)
+                || ! is_string($data['composer_vendor'] ?? null)
+                || ! is_string($data['npm_registry'] ?? null)
+                || ! is_string($data['npm_scope'] ?? null)) {
+                throw new InstallationException('Trusted registry configuration does not match schema 2.');
+            }
+
+            return new self($data['composer_repositories'], ['laravel', $data['composer_vendor']], $data['npm_registry'], [$data['npm_scope']]);
+        }
+
+        // Schema 1 remains readable for existing installations. New setups should declare one explicit vendor and scope in schema 2.
         if (($data['schema_version'] ?? null) !== 1
             || ! is_array($data['composer_repositories'] ?? null)
             || ! is_array($data['composer_vendors'] ?? null)
             || ! is_string($data['npm_registry'] ?? null)
             || ! is_array($data['npm_scopes'] ?? null)) {
-            throw new InstallationException('Trusted registry configuration does not match schema 1.');
+            throw new InstallationException('Trusted registry configuration does not match schema 1 or 2.');
         }
 
         return new self($data['composer_repositories'], $data['composer_vendors'], $data['npm_registry'], $data['npm_scopes']);
     }
 
+    public function composerVendor(): string
+    {
+        foreach ($this->composerVendors as $vendor) {
+            if (is_string($vendor) && ! in_array($vendor, ['laravel', 'example'], true)) {
+                return $vendor;
+            }
+        }
+
+        throw new InstallationException('Configure one verified Master Core Composer vendor before installing packages.');
+    }
+
+    public function npmScope(): string
+    {
+        foreach ($this->npmScopes as $scope) {
+            if (is_string($scope)) {
+                return $scope;
+            }
+        }
+
+        throw new InstallationException('Configure one verified Master Core npm scope before installing frontend packages.');
+    }
+
+    public function profileWithDistributionIdentity(CoreProfile $profile): CoreProfile
+    {
+        return $profile->withDistributionIdentity($this->composerVendor(), $this->npmScope());
+    }
+
     public function assertTrusted(CoreProfile $profile, ProjectPlan $plan): void
     {
-        if ($this->composerRepositories === [] || $this->composerVendors === [] || $this->npmScopes === [] || ! $this->isHttpsUrl($this->npmRegistry)) {
-            throw new InstallationException('Trusted registry configuration must list HTTPS Composer repositories, approved vendors, an HTTPS npm registry, and approved scopes.');
+        if ($this->composerRepositories === [] || ! $this->isHttpsUrl($this->npmRegistry)) {
+            throw new InstallationException('Trusted registry configuration must list HTTPS Composer repositories, one verified vendor, an HTTPS npm registry, and one verified scope.');
+        }
+
+        $vendor = $this->composerVendor();
+        $scope = $this->npmScope();
+        if (! preg_match('/^[a-z0-9][a-z0-9_.-]*$/', $vendor) || $vendor === 'example'
+            || ! preg_match('/^@[a-z0-9_.-]+$/', $scope) || $scope === '@master-core') {
+            throw new InstallationException('Trusted package identity is invalid or still uses a placeholder.');
+        }
+        if (! str_starts_with($profile->packageName(), $vendor.'/')) {
+            throw new InstallationException('The selected Composer vendor does not match the distribution profile.');
+        }
+        foreach ($profile->data['npm_packages'] as $package) {
+            if (! str_starts_with((string) ($package['name'] ?? ''), $scope.'/')) {
+                throw new InstallationException('The selected npm scope does not match the distribution profile.');
+            }
+        }
+        if (! str_starts_with((string) ($profile->data['shared_npm']['name'] ?? ''), $scope.'/')) {
+            throw new InstallationException('The selected npm scope does not match the shared UI package identity.');
         }
 
         foreach ($this->composerRepositories as $repository) {
@@ -61,7 +118,7 @@ final readonly class TrustedSources
         }
         foreach ($requiredComposerPackages as $package) {
             [$vendor] = explode('/', $package, 2);
-            if ($vendor === 'example' || ! in_array($vendor, $this->composerVendors, true)) {
+            if (! in_array($vendor, ['laravel', $this->composerVendor()], true)) {
                 throw new InstallationException("Composer vendor '{$vendor}' is not explicitly approved. No packages were installed.");
             }
         }
@@ -71,14 +128,8 @@ final readonly class TrustedSources
                 continue;
             }
             [$scope] = explode('/', $package, 2);
-            if ($scope === '@master-core' || ! in_array($scope, $this->npmScopes, true)) {
+            if ($scope !== $this->npmScope()) {
                 throw new InstallationException("npm scope '{$scope}' is not explicitly approved. No packages were installed.");
-            }
-        }
-
-        foreach ($this->npmScopes as $scope) {
-            if (! is_string($scope) || ! preg_match('/^@[a-z0-9_.-]+$/', $scope) || $scope === '@master-core') {
-                throw new InstallationException('Only explicitly verified, non-placeholder npm scopes may be approved.');
             }
         }
     }

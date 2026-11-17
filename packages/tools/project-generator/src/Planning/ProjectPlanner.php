@@ -169,7 +169,7 @@ final class ProjectPlanner
     private function npmDependencyClosure(CoreProfile $profile, array $features): array
     {
         $npmIndex = $profile->data['npm_packages'];
-        $npmIndex['@itassistance-bd/ui'] = $profile->data['shared_npm'];
+        $npmIndex[$profile->data['shared_npm']['name']] = $profile->data['shared_npm'];
         $keyByName = [];
         foreach ($npmIndex as $key => $package) {
             $keyByName[$package['name']] = $key;

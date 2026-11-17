@@ -1,13 +1,15 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { randomBytes } from 'node:crypto';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
+import { resolvePhpRuntime } from './php-runtime.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const php = process.env.PHP_BINARY ?? (process.platform === 'win32' ? 'php.exe' : 'php');
+const { executable: php, version: phpVersion, arguments: phpArguments } = await resolvePhpRuntime(root);
+process.stdout.write(`PHP runtime: ${php} (PHP ${phpVersion})\n`);
 const id = `${new Date().toISOString().replaceAll(':', '').replaceAll('.', '')}-${randomBytes(3).toString('hex')}`;
 const isolatedRoot = await mkdtemp(join(tmpdir(), 'master-core-playwright-'));
 const cacheDir = join(root, 'storage', 'framework', `browser-qa-${id}`, 'cache');
@@ -61,13 +63,17 @@ const env = {
     PLAYWRIGHT_VIEWER_PASSWORD: viewerPassword,
     E2E_BASE_URL: baseUrl,
     E2E_ARTIFACT_DIR: artifacts,
+    PLAYWRIGHT_OUTPUT_DIR: join(artifacts, 'test-results'),
+    PLAYWRIGHT_HTML_OUTPUT_DIR: join(artifacts, 'playwright-report'),
 };
 
 let server;
 try {
-    await run(php, ['artisan', 'migrate', '--force', '--no-interaction'], { env, cwd: root });
-    await run(php, ['tests/e2e/prepare-database.php'], { env, cwd: root });
-    server = spawn(php, ['-S', `127.0.0.1:${port}`, '-t', join(root, 'public'), routerPath], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    await assertIsolatedDatabase({ isolatedRoot, dbPath, cacheDir, env });
+    process.stdout.write(`Database migration target: isolated SQLite file ${dbPath}\n`);
+    await run(php, [...phpArguments, 'artisan', 'migrate', '--force', '--no-interaction'], { env, cwd: root });
+    await run(php, [...phpArguments, 'tests/e2e/prepare-database.php'], { env, cwd: root });
+    server = spawn(php, [...phpArguments, '-S', `127.0.0.1:${port}`, '-t', join(root, 'public'), routerPath], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     server.stdout.on('data', (chunk) => writeServerDiagnostics(process.stdout, chunk, env));
     server.stderr.on('data', (chunk) => writeServerDiagnostics(process.stderr, chunk, env));
     await waitForServer(baseUrl, server);
@@ -76,10 +82,10 @@ try {
     const grepIndex = process.argv.indexOf('--grep');
     if (grepIndex >= 0 && process.argv[grepIndex + 1]) args.push('--grep', process.argv[grepIndex + 1]);
     const code = await run(process.execPath, args, { env, cwd: root });
-    process.stdout.write(`\nPlaywright artifacts: ${artifacts}\nHTML report: ${join(root, 'playwright-report', 'index.html')}\nIsolated SQLite DB retained at: ${dbPath}\n`);
+    process.stdout.write(`\nPlaywright artifacts: ${artifacts}\nHTML report: ${join(artifacts, 'playwright-report', 'index.html')}\nIsolated SQLite DB retained at: ${dbPath}\n`);
     process.exitCode = code;
 } catch (error) {
-    process.stderr.write(`${error.message}\nScreenshots/artifacts: ${artifacts}\nHTML report: ${join(root, 'playwright-report', 'index.html')}\nIsolated SQLite DB retained at: ${dbPath}\n`);
+    process.stderr.write(`${error.message}\nScreenshots/artifacts: ${artifacts}\nHTML report: ${join(artifacts, 'playwright-report', 'index.html')}\nIsolated SQLite DB retained at: ${dbPath}\n`);
     process.exitCode = 1;
 } finally {
     if (server && server.exitCode === null) {
@@ -94,6 +100,43 @@ function run(command, args, options) {
         child.once('error', rejectRun);
         child.once('exit', (code) => code === 0 ? resolveRun(0) : rejectRun(new Error(`${command} exited with code ${code ?? 'unknown'}.`)));
     });
+}
+
+async function assertIsolatedDatabase({ isolatedRoot: isolatedDirectory, dbPath: databasePath, cacheDir: configCacheDirectory, env: childEnv }) {
+    const isolatedPath = resolve(isolatedDirectory);
+    const isInside = (candidate, parent) => {
+        const candidateRelative = relative(resolve(parent), resolve(candidate));
+        return candidateRelative !== ''
+            && candidateRelative !== '..'
+            && !candidateRelative.startsWith(`..${sep}`)
+            && !isAbsolute(candidateRelative);
+    };
+
+    if (childEnv.DB_CONNECTION !== 'sqlite' || childEnv.DB_URL !== '') {
+        throw new Error('Browser tests refused to migrate: test connection must be SQLite and DB_URL must be empty.');
+    }
+    if (resolve(childEnv.DB_DATABASE) !== resolve(databasePath) || !isInside(databasePath, isolatedPath)) {
+        throw new Error('Browser tests refused to migrate: database file is outside the unique isolated temporary directory.');
+    }
+
+    const databaseStat = await lstat(databasePath);
+    if (!databaseStat.isFile() || databaseStat.isSymbolicLink()) {
+        throw new Error('Browser tests refused to migrate: isolated SQLite target is not a regular file.');
+    }
+
+    for (const cacheKey of ['APP_CONFIG_CACHE', 'APP_ROUTES_CACHE', 'APP_SERVICES_CACHE', 'APP_PACKAGES_CACHE', 'APP_EVENTS_CACHE']) {
+        if (!isInside(join(root, childEnv[cacheKey]), configCacheDirectory)) {
+            throw new Error(`Browser tests refused to start: ${cacheKey} is outside this run's unique cache directory.`);
+        }
+    }
+    for (const cacheKey of ['APP_CONFIG_CACHE', 'APP_ROUTES_CACHE', 'APP_SERVICES_CACHE', 'APP_PACKAGES_CACHE', 'APP_EVENTS_CACHE']) {
+        try {
+            await access(childEnv[cacheKey]);
+            throw new Error('Browser tests refused to start: isolated framework cache output already exists.');
+        } catch (error) {
+            if (error?.code !== 'ENOENT') throw error;
+        }
+    }
 }
 
 function getFreePort() {

@@ -1,18 +1,39 @@
 # Laravel Master Core
 
+> Categories is not part of the current product. Its Admin page, routes, API, permissions, CRUD registration, and generator defaults are removed. The historical Categories migration is retained for existing database history; no table is dropped and existing records are not changed.
+
 Laravel Master Core is a modular Laravel 12 codebase with a Laravel development host, reusable Core packages, an admin UI, and a standalone Project Generator. Business features remain host-owned; the package discovery and registry do not automatically migrate databases or grant permissions. Historical phase numbering is documented in the [Master Roadmap](docs/architecture/master-roadmap.md).
 
 ## Project status and package identity
 
-- The repository contains ten npm workspaces under the owner-confirmed local scope `@itassistance-bd`. External npm organization ownership has not been independently verified.
+- The repository contains ten npm workspaces under `@itassistance-bd`. Authenticated npm verification confirmed account `itassistancebd` is an organization owner with account 2FA enabled; all ten package names currently return registry 404.
 - Composer package names still use the `example/` placeholder vendor. The candidate vendor has not been verified, and external Composer distribution is not ready.
-- Phase 10 distribution and Phase 11 generated-host acceptance remain **PARTIAL**. See the [identity migration report](docs/architecture/phase10-package-identity-migration-record.md) and [roadmap](docs/architecture/master-roadmap.md).
+- Phase 10 external package publication remains **PARTIAL**: Composer vendor ownership is unverified and the ten npm package names are not published. Global project generation avoids publishing internal packages by resolving all 12 Composer packages and 10 npm workspaces from the included monorepo. Phase 11 local generation remains **PARTIAL** until third-party installation and clean Windows generation complete. See the [integrated distribution implementation report](docs/architecture/phase10-11-integrated-distribution.md), [identity migration report](docs/architecture/phase10-package-identity-migration-record.md), and [roadmap](docs/architecture/master-roadmap.md).
+
+## Global CLI readiness
+
+A Windows bootstrap installer and `master` command are now prepared in this source tree. The existing public `main` branch has not been updated with these files, so the bootstrap command is **not yet available from GitHub**. Do not run the remote install command until an authorized source update includes `install.ps1` and `scripts/master-cli.ps1`.
+
+`master new example-app` downloads the canonical monorepo archive and delegates to the Phase 11 Generator's monorepo-template installer. It copies the existing Laravel application rather than creating a Laravel skeleton. All Composer Core packages resolve from the included relative path repositories, and npm Core packages resolve from local workspaces; Composer/npm use their normal registries for third-party dependencies. Generation validates the output, prepares `.env`, creates an application key, runs package discovery, installs/builds frontend dependencies, and does not run migrations or seeders. `master status`, `master changes`, and `master publish --dry-run` inspect this source repository; `master publish` requires path-by-path staging approval followed by separate commit and push confirmations. See the [global CLI guide](docs/development/global-cli.md), [GitHub distribution status](docs/development/github-distribution.md), and [release/update guide](docs/development/release-and-updates.md).
+
+After the installer is included on the public branch, the planned Windows setup and project commands are:
+
+```powershell
+irm https://raw.githubusercontent.com/Itassistancebd/laravel-master-core/main/install.ps1 | iex
+master new example-app
+cd example-app
+php artisan serve
+```
+
+The public bootstrap and project generation commands become available to fresh PCs only after the installer, CLI, and template-generator changes are published to the existing `main` branch. Local implementation acceptance is being verified separately.
+
+For an existing generated host, review the [release and update guide](docs/development/release-and-updates.md); `master update` updates the CLI only. If installation fails, record the command, Windows and PowerShell versions, PHP/Composer/Git versions, and the error text after removing credentials and private paths. Use the repository's GitHub Issues page only if Issues are enabled; never attach `.env`, logs containing credentials, databases, private keys, or user data.
 
 ## Requirements
 
-- PHP 8.2 or later and Composer 2.x. Check `composer.json` for required PHP extensions.
+- PHP 8.4 or later and Composer 2.x. Check `composer.json` for required PHP extensions.
 - Laravel 12 for the host application.
-- Node.js and npm for the Vue/TypeScript frontend. The repository does not currently declare a minimum Node.js/npm engine version.
+- Node.js 20.19+ or 22.12+, and npm 7+, for CLI project generation and frontend builds.
 - SQLite is used by automated tests. A host may configure MySQL 8+ or another Laravel-supported database after reviewing its environment and migrations.
 
 ## Local development setup
@@ -20,21 +41,21 @@ Laravel Master Core is a modular Laravel 12 codebase with a Laravel development 
 From the repository root, install the local path packages and npm workspaces:
 
 ```powershell
-composer install
+.\scripts\project-command.ps1 composer install
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-if (-not (Select-String -Path .env -Pattern '^APP_KEY=.+$' -Quiet)) { php artisan key:generate }
+if (-not (Select-String -Path .env -Pattern '^APP_KEY=.+$' -Quiet)) { .\scripts\project-command.ps1 php artisan key:generate }
 npm.cmd install
 npm.cmd run build
 ```
 
-On macOS/Linux, use `test -f .env || cp .env.example .env`, `grep -q '^APP_KEY=.' .env || php artisan key:generate`, `npm install`, and `npm run build`. These commands preserve an existing environment file and application key. If multiple PHP versions are installed, put the intended PHP 8.2+ executable on `PATH` or set `PHP_BINARY` to its full path when invoking browser tests. The Playwright runner falls back to `php` on `PATH`.
+On macOS/Linux, use `test -f .env || cp .env.example .env`, `grep -q '^APP_KEY=.' .env || php artisan key:generate`, `npm install`, and `npm run build`. These commands preserve an existing environment file and application key. On Windows, configure the ignored `.php-runtime.local.json` file and run project PHP and Composer commands through `scripts/project-command.ps1`; see [local development](docs/development/local-development.md). The wrapper checks PHP 8.4+ and adjusts PATH only for that launched command. Playwright reads the same runtime configuration and reports its selected executable.
 
 Review `.env` and configure a local database before manually running any migrations. Composer package discovery does not run migrations. Automated PHPUnit and Playwright tests use in-memory or uniquely named temporary SQLite databases; they do not use the configured application database. Do not run setup migrations against a production or shared database.
 
 ## Tests and checks
 
 ```powershell
-composer test
+.\scripts\project-command.ps1 composer test
 npm.cmd run test
 npm.cmd run typecheck
 npm.cmd run build
@@ -42,15 +63,21 @@ npm.cmd run test:e2e
 npm.cmd run test:e2e:responsive
 ```
 
+On Windows, run Composer and direct PHP commands above through `scripts/project-command.ps1` so Composer's `@php` scripts inherit the configured PHP 8.4+ runtime. The PHP runtime configuration is local to this checkout and is not used in distributed consumer packages.
+
 Use `npm` instead of `npm.cmd` outside Windows. Playwright requires its Chromium browser to be installed (`npx playwright install chromium`). Browser tests start a local PHP server and use isolated temporary SQLite databases; see [Browser QA](docs/browser-qa.md).
 
 ## Architecture overview
 
-- `app/` and `resources/` contain the Laravel host, Categories pilot, admin shell, and host frontend composition.
+- `app/` and `resources/` contain the Laravel host, admin shell, and host frontend composition. Categories is excluded from current routes and UI.
 - `packages/core/` contains Foundation, the Composer metapackage, Settings, Authentication, User Management, Roles & Permissions, Audit Logs, Module Manager, System Health, Notifications, and CRUD Engine.
 - `packages/core/*/package.json` defines the ten npm workspace packages: `ui`, `settings-ui`, `auth`, `user-management`, `roles-permissions`, `audit-logs`, `module-manager`, `system-health`, `notifications`, and `crud-engine`.
 - `packages/tools/project-generator/` contains the standalone Composer CLI. Real external installs remain gated on verified package identities and trusted registries.
 - `docs/architecture/` records proposals, implementation results, acceptance status, and known limitations.
+
+## External package distribution
+
+The local source uses npm workspaces and Composer path repositories for development. The candidate Composer vendor remains unverified. The generator's trusted registry configuration maps explicitly configured Composer identities and the verified `@itassistance-bd` scope into generated consumer manifests; it does not register or publish packages. See the [controlled package release guide](docs/development/package-release-guide.md) and [Phase 10 and 11 distribution report](docs/architecture/phase10-11-integrated-distribution.md) for release commands, local artifact checks, and remaining external gates.
 
 ## License
 
@@ -168,4 +195,4 @@ See [Foundation package documentation](packages/core/foundation/README.md), [arc
 
 ## Versioning and distribution
 
-The package will be versioned independently from host applications. Until a vendor identity is selected, keep the `example/` Composer name for local path development. A future release can be distributed from a Git VCS repository or private Composer repository after replacing that placeholder name with an owned vendor name and tagging releases using semantic versions. No public distribution is configured.
+Composer source packages retain local `example/` identities and are resolved only from monorepo path repositories during generation. Packagist is not used for our own packages; normal public registries remain enabled for Laravel and third-party dependencies. No separate package repositories are required. Public global CLI installation still depends on publishing the local installer and CLI changes to the existing repository. See [GitHub distribution status](docs/development/github-distribution.md).

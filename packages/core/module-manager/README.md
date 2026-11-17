@@ -50,3 +50,14 @@ The read-only page uses the existing Auth SPA route guard and `CoreDataTable`, w
 Composer and host deployment configuration remain responsible for installation, version upgrades, package discovery, and activation. Do not expose Composer, Artisan, migration, or filesystem operations through HTTP. Runtime provider unloading and module lifecycle persistence are outside v1; changing that boundary requires a separately approved design.
 
 No Module Manager migration is registered. Backend tests use the repository's isolated SQLite `:memory:` test setup for neighboring package regressions; the catalog itself does not need a database. Run the package feature suite, full PHP suite, Pint, Composer validation/package discovery, `npm run typecheck`, `npm run test:ui`, and `npm run build` from the project root. Authenticated browser acceptance remains a separate host deployment check.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/module-manager
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

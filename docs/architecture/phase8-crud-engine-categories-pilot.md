@@ -1,5 +1,7 @@
 # Phase 8 — CRUD Engine Categories Pilot
 
+> **Historical implementation report:** Categories was a pilot resource and is no longer included in the current application. Its UI, API, permissions, and CRUD registration have been removed. The historical migration is retained and no existing database data is modified. The generic CRUD Engine remains available.
+
 **Project:** Laravel Master Core
 **Date:** 2026-11-17
 **Status:** **PASS** (Campaign Phase 8; repository CRUD Engine report remains Phase 9)

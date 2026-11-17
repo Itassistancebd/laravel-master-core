@@ -1,5 +1,7 @@
 # Phase 9 — CRUD Engine Implementation Report
 
+> **Current product note:** This report documents the earlier Categories host pilot. Categories has since been removed from the application; the generic CRUD Engine and its resource-registration APIs remain.
+
 **Status:** Implemented, adopted by the host Categories resource, and locally browser accepted (Campaign Phase 8; repository Phase 9 duplicate label preserved).
 
 ## Implementation summary

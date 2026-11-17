@@ -67,3 +67,14 @@ npm run build -- --outDir storage/framework/testing/crud-engine-build --emptyOut
 ```
 
 These commands do not migrate the configured application database. The build output directory should be unique for each verification run.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/crud-engine
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

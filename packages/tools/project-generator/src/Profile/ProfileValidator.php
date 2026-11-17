@@ -21,6 +21,11 @@ final class ProfileValidator
             throw new ProfileException('Unsupported generator profile schema; supported schema is 1.');
         }
 
+        if (($data['toolchain']['node'] ?? null) !== '^20.19.0 || >=22.12.0'
+            || ($data['toolchain']['npm'] ?? null) !== '>=7') {
+            throw new ProfileException('Unsupported Node.js/npm toolchain constraints for the bundled Vite 7 workspace.');
+        }
+
         if (($meta['extra']['profile_schema'] ?? null) !== 1 || ($meta['extra']['profile'] ?? null) !== 'master-core-v1') {
             throw new ProfileException('Unsupported Master Core package profile schema or name.');
         }
@@ -172,6 +177,8 @@ final class ProfileValidator
                 || ($composer['require']['laravel/framework'] ?? null) !== $profile->data['metapackage']['require']['laravel/framework']
                 || ($npm['dependencies'] ?? []) !== ($profile->npmPackage($feature)['dependencies'] ?? [])
                 || ($npm['peerDependencies'] ?? []) !== ($profile->npmPackage($feature)['peerDependencies'] ?? [])
+                || ($npm['engines']['node'] ?? null) !== $profile->data['toolchain']['node']
+                || ($npm['engines']['npm'] ?? null) !== $profile->data['toolchain']['npm']
                 || ($npm['exports'] ?? []) !== ($profile->npmPackage($feature)['exports'] ?? [])) {
                 throw new ProfileException("Local Composer/npm manifests disagree with the profile for '{$feature}'.");
             }
@@ -179,11 +186,14 @@ final class ProfileValidator
 
         $sourceComposer = json_decode((string) file_get_contents($root.'/composer.json'), true, 512, JSON_THROW_ON_ERROR);
         $sourceNpm = json_decode((string) file_get_contents($root.'/package.json'), true, 512, JSON_THROW_ON_ERROR);
+        $uiNpm = json_decode((string) file_get_contents($root.'/packages/core/ui/package.json'), true, 512, JSON_THROW_ON_ERROR);
         $sourceVue = $sourceNpm['dependencies']['vue'] ?? $sourceNpm['devDependencies']['vue'] ?? null;
         if (($sourceComposer['require']['php'] ?? null) !== $profile->data['metapackage']['require']['php']
             || ($sourceComposer['require']['laravel/framework'] ?? null) !== $profile->data['metapackage']['require']['laravel/framework']
             || $sourceVue !== $profile->data['toolchain']['frontend']['vue']
-            || ($sourceNpm['devDependencies']['typescript'] ?? null) !== $profile->data['toolchain']['frontend']['typescript']) {
+            || ($sourceNpm['devDependencies']['typescript'] ?? null) !== $profile->data['toolchain']['frontend']['typescript']
+            || ($uiNpm['engines']['node'] ?? null) !== $profile->data['toolchain']['node']
+            || ($uiNpm['engines']['npm'] ?? null) !== $profile->data['toolchain']['npm']) {
             throw new ProfileException('Bundled runtime compatibility does not match the current host workspace.');
         }
     }

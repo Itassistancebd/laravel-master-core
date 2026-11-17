@@ -43,6 +43,41 @@ final class ProjectGeneratorTest extends TestCase
         self::assertSame(['example/laravel-master-core-foundation'], $profile->baseline());
     }
 
+    public function test_distribution_identity_is_configurable_without_changing_the_source_profile(): void
+    {
+        $source = $this->loadProfile();
+        $profile = $source->withDistributionIdentity('verified-vendor', '@verified-scope');
+        $plan = (new ProjectPlanner)->build($profile, ['roles-permissions'], ['roles-permissions']);
+
+        self::assertSame('example/laravel-master-core', $source->packageName());
+        self::assertSame('verified-vendor/laravel-master-core', $profile->packageName());
+        self::assertSame(['verified-vendor/laravel-master-core-foundation'], $profile->baseline());
+        self::assertArrayHasKey('verified-vendor/laravel-master-core-roles-permissions', $plan->composerRequirements);
+        self::assertArrayHasKey('@verified-scope/roles-permissions', $plan->npmDependencies);
+        self::assertArrayHasKey('@verified-scope/ui', $plan->npmDependencies);
+        self::assertSame('@verified-scope/auth', $profile->features()['auth']['npm']);
+    }
+
+    public function test_schema_two_trusted_sources_select_one_configured_vendor_and_scope(): void
+    {
+        $path = $this->temporary.DIRECTORY_SEPARATOR.'trusted-sources.json';
+        file_put_contents($path, json_encode([
+            'schema_version' => 2,
+            'composer_repositories' => ['https://packages.example.test/composer/'],
+            'composer_vendor' => 'verified-vendor',
+            'npm_registry' => 'https://registry.example.test/',
+            'npm_scope' => '@verified-scope',
+        ], JSON_THROW_ON_ERROR));
+
+        $trusted = TrustedSources::fromUserConfig($path);
+        $profile = $trusted->profileWithDistributionIdentity($this->loadProfile());
+        $plan = (new ProjectPlanner)->build($profile, [], []);
+        $trusted->assertTrusted($profile, $plan);
+
+        self::assertSame('verified-vendor', $trusted->composerVendor());
+        self::assertSame('@verified-scope', $trusted->npmScope());
+    }
+
     public function test_profile_rejects_missing_identity_and_unsupported_runtime_versions(): void
     {
         $validator = new ProfileValidator;
@@ -170,7 +205,7 @@ final class ProjectGeneratorTest extends TestCase
 
     public function test_current_placeholder_namespaces_fail_before_staging_or_processes(): void
     {
-        $profile = $this->loadProfile();
+        $profile = $this->loadProfile()->withDistributionIdentity('acme', '@verified');
         $plan = (new ProjectPlanner)->build($profile, [], []);
         $trusted = new TrustedSources(['https://packages.example.test'], ['example', 'laravel'], 'https://registry.example.test', ['@verified']);
         $processes = new RecordingExecutor;
@@ -179,7 +214,7 @@ final class ProjectGeneratorTest extends TestCase
             (new ProjectInstaller($processes))->install($target, $plan, $profile, $trusted);
             self::fail('Placeholder package vendor must be rejected.');
         } catch (InstallationException $exception) {
-            self::assertStringContainsString('not explicitly approved', $exception->getMessage());
+            self::assertStringContainsString('verified Master Core Composer vendor', $exception->getMessage());
             self::assertSame([], $processes->calls);
             self::assertDirectoryDoesNotExist($target);
             self::assertCount(0, glob($this->temporary.DIRECTORY_SEPARATOR.'.new-app.master-core-staging-*') ?: []);
@@ -263,7 +298,48 @@ final class ProjectGeneratorTest extends TestCase
         self::assertArrayHasKey('acme/laravel-master-core-roles-permissions', $composer['require']);
         self::assertContains(['packagist.org' => false], $composer['repositories']);
         self::assertArrayHasKey('@acme/roles-permissions', $npm['dependencies']);
+        self::assertSame('^20.19.0 || >=22.12.0', $npm['engines']['node']);
+        self::assertSame('>=7', $npm['engines']['npm']);
         self::assertSame("registry=https://registry.acme.test\n", file_get_contents($target.'/.npmrc'));
+    }
+
+    public function test_monorepo_template_reuses_the_existing_app_and_resolves_only_local_core_sources(): void
+    {
+        $source = dirname(__DIR__, 4);
+        $target = $this->temporary.DIRECTORY_SEPARATOR.'template-app';
+        $processes = new RecordingExecutor;
+        $result = (new ProjectInstaller($processes))->installMonorepoTemplate(
+            $target,
+            $source,
+            ['php.exe', 'composer.phar'],
+            ['node.exe', 'npm-cli.js'],
+            'php.exe',
+            'main',
+            str_repeat('a', 40),
+        );
+
+        self::assertSame($target, $result['target']);
+        self::assertFileExists($target.'/artisan');
+        self::assertFileExists($target.'/packages/core/master-core/composer.json');
+        self::assertFileExists($target.'/packages/core/foundation/composer.json');
+        self::assertFileExists($target.'/packages/tools/project-generator/composer.json');
+        self::assertFileExists($target.'/.env.example');
+        self::assertFileExists($target.'/.env');
+        self::assertFileDoesNotExist($target.'/.php-runtime.local.json');
+        self::assertDirectoryDoesNotExist($target.'/.git');
+        self::assertDirectoryDoesNotExist($target.'/vendor');
+        self::assertDirectoryDoesNotExist($target.'/node_modules');
+        self::assertFileExists($target.'/database/database.sqlite');
+        self::assertSame(0, filesize($target.'/database/database.sqlite'));
+        self::assertSame('main', json_decode((string) file_get_contents($target.'/master-core-source.json'), true, 512, JSON_THROW_ON_ERROR)['ref']);
+
+        self::assertSame(['update', 'install', 'validate'], array_map(
+            static fn (array $call): string => $call[2] ?? '',
+            array_slice($processes->calls, 0, 3),
+        ));
+        self::assertContains('key:generate', array_merge([], ...$processes->calls));
+        self::assertContains(['node.exe', 'npm-cli.js', 'ci', '--no-audit', '--no-fund'], $processes->calls);
+        self::assertContains(['node.exe', 'npm-cli.js', 'run', 'build'], $processes->calls);
     }
 
     private function loadProfile(): CoreProfile
@@ -273,38 +349,7 @@ final class ProjectGeneratorTest extends TestCase
 
     private function trustedProfile(): CoreProfile
     {
-        $data = $this->loadProfile()->data;
-        $rewrite = static fn (string $name): string => str_replace(['example/laravel-master-core', '@itassistance-bd'], ['acme/laravel-master-core', '@acme'], $name);
-        $data['metapackage']['name'] = $rewrite($data['metapackage']['name']);
-        foreach ($data['metapackage']['require'] as $name => $constraint) {
-            unset($data['metapackage']['require'][$name]);
-            $data['metapackage']['require'][$rewrite($name)] = $constraint;
-        }
-        foreach ($data['metapackage']['extra']['baseline'] as &$name) {
-            $name = $rewrite($name);
-        }
-        unset($name);
-        foreach ($data['metapackage']['extra']['optional_features'] as &$feature) {
-            $feature['composer'] = $rewrite($feature['composer']);
-            $feature['npm'] = $rewrite($feature['npm']);
-            $feature['frontend_styles'] = $rewrite($feature['frontend_styles']);
-            $feature['composer_dependencies'] = array_map($rewrite, $feature['composer_dependencies']);
-        }
-        unset($feature);
-        foreach ($data['npm_packages'] as &$package) {
-            $package['name'] = $rewrite($package['name']);
-            foreach (['dependencies', 'peerDependencies'] as $kind) {
-                foreach ($package[$kind] as $name => $version) {
-                    unset($package[$kind][$name]);
-                    $package[$kind][$rewrite($name)] = $version;
-                }
-            }
-            $package['exports']['./style.css']['import'] = $rewrite($package['exports']['./style.css']['import']);
-        }
-        unset($package);
-        $data['shared_npm']['name'] = $rewrite($data['shared_npm']['name']);
-
-        return new CoreProfile($data);
+        return $this->loadProfile()->withDistributionIdentity('acme', '@acme');
     }
 
     private function trustedSources(): TrustedSources

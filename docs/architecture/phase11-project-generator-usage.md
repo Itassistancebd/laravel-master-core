@@ -1,6 +1,8 @@
 # Phase 11 Project Generator CLI
 
-The generator is a standalone Composer executable. It creates a new Laravel 12 host only after the selected feature plan and trusted package sources pass validation.
+The generator is a standalone Composer executable. It creates a new Laravel 12 host only after the selected feature plan and trusted package sources pass validation. Generated projects no longer include the Categories feature. The historical database migration remains for existing installations; generator setup does not run migrations automatically.
+
+The Windows global `master new` command uses the Generator's `template` mode to copy the existing Laravel application and bundled Core packages. The standalone feature-selection `new` command described below continues to require explicitly trusted package registries. The global installer is implemented locally but is not yet present on the published GitHub branch; see the [distribution architecture](global-cli-and-monorepo-distribution.md) and [global CLI guide](../development/global-cli.md).
 
 ## Commands
 
@@ -30,25 +32,25 @@ Example selection JSON:
 
 ## Trusted registry configuration
 
-Real installs require a local, secret-free JSON file at `%APPDATA%/MasterCore/ProjectGenerator/trusted-sources.json` on Windows, `$XDG_CONFIG_HOME/master-core/project-generator/trusted-sources.json` when set, or `$USERPROFILE/.config/master-core/project-generator/trusted-sources.json` as the fallback. `--trusted-config=<path>` selects another file.
+Real installs require a local JSON file at `%APPDATA%/MasterCore/ProjectGenerator/trusted-sources.json` on Windows, `$XDG_CONFIG_HOME/master-core/project-generator/trusted-sources.json` when set, or `$USERPROFILE/.config/master-core/project-generator/trusted-sources.json` as the fallback. `--trusted-config=<path>` selects another file. The file stores only identity and registry URLs; never put credentials in it.
 
-Schema 1 fields:
+Schema 2 fields:
 
 ```json
 {
-  "schema_version": 1,
-  "composer_repositories": ["https://registry-host.example/verified-composer-repository"],
-  "composer_vendors": ["verified-vendor"],
+  "schema_version": 2,
+  "composer_repositories": ["https://registry-host.example/composer/"],
+  "composer_vendor": "verified-vendor",
   "npm_registry": "https://registry-host.example/npm/",
-  "npm_scopes": ["@verified-scope"]
+  "npm_scope": "@itassistance-bd"
 }
 ```
 
-The example values are documentation placeholders and are not trusted sources. Replace them only after verifying namespace ownership and repository control. URLs must use HTTPS and cannot contain credentials, query strings, or fragments. Put registry credentials in the package manager's approved credential store; never put credentials in this file. The generator uses an isolated Composer home in the preserved staging directory and suppresses child output to avoid leaking credentials. Generated Composer requirements pin the verified repositories and disable implicit Packagist fallback; generated frontend projects get an `.npmrc` that selects the verified npm registry. The completed host retains the non-secret `.master-core-composer-home` policy file for inspection. Do not add registry credentials to generated files.
+The npm organization `itassistance-bd` and `@itassistance-bd` scope are verified for the authenticated organization owner, but the ten intended package names still return 404 and are not published. The Composer vendor and repository URL above remain placeholders until Packagist namespace ownership and repository control are verified. Do not treat this example as a ready-to-install configuration. URLs must use HTTPS and cannot contain credentials, query strings, or fragments. Put registry credentials in the package manager's approved credential store; never put credentials in this file. The generator uses an isolated Composer home in the preserved staging directory and suppresses child output to avoid leaking credentials. Generated Composer requirements pin the configured repositories and disable implicit Packagist fallback; generated frontend projects get an `.npmrc` that selects the configured npm registry. The completed host retains the non-secret `.master-core-composer-home` policy file for inspection. Do not add registry credentials to generated files.
 
-Composer packages still use the unverified `example/` vendor and are rejected by the trusted-source gate. The bundled npm profile uses owner-confirmed `@itassistance-bd`; an installer must configure that scope and an HTTPS registry after independent ownership verification. External ownership was not independently verified here. Dry-run and local fixture tests do not prove registry publishing or consumer installation. See the [identity migration record](phase10-package-identity-migration-record.md).
+The bundled profile carries the verified `@itassistance-bd` npm package identities and local `example/` Composer source identities. The installer rewrites its Master Core Composer vendor and npm scope using the configured schema 2 identities. It does not modify source manifests, register namespaces, publish packages, or verify that configured package names exist. The npm owner role is verified, but package availability is not; the candidate Composer vendor remains unverified. Dry-run and local fixture tests do not prove public registry installation. See the [controlled package release guide](../development/package-release-guide.md), [integrated distribution implementation report](phase10-11-integrated-distribution.md), and [identity migration record](phase10-package-identity-migration-record.md).
 
-The installed Project Generator package itself has been installed and its autoload/CLI checked in a fresh consumer with a local path repository. That does not install the Core feature packages or create a Laravel host. A real `new` command reaches the trusted-source check and exits before staging when the registry file is absent; keep this behavior until the publisher verifies the package identities and HTTPS registries. See the [Phase 10 package identity proposal](phase10-package-identity-and-release-proposal.md).
+An installed Project Generator package can be tested independently, but a real `new` command requires verified schema 2 identity and repository settings before staging. If a registry lookup fails during installation, the error points to the configured source and preserves its staging directory. See the [integrated distribution implementation report](phase10-11-integrated-distribution.md).
 
 ## Generated project and safety
 
@@ -80,3 +82,13 @@ Read `docs/master-core-installation.md` inside the generated host. Review packag
 - Node/npm minimum versions are not encoded in the approved profile; the generator checks that Node and npm are present when frontend packages are selected. Verify the packages' current engine fields before release.
 - Windows process invocation, path length, Unicode, cancellation, trusted registry access, and a real package install still require release acceptance on a clean Windows host.
 - No database or browser acceptance is claimed.
+
+## Final release campaign installation evidence - 2026-11-18
+
+Local artifact checks now include installation of all twelve exported Composer snapshots in an isolated consumer with `--prefer-dist`. The XAMPP2 PHP 8.4.27 ZIP extension was loaded through project-local configuration; Composer extracted 96 third-party archives and generated autoload files. The local npm consumer installed and imported all ten tarballs without workspace links. These tests do not use public Core package records.
+
+The installed local Generator CLI help and identity-selected `new --dry-run` passed without creating a target. A separate manually scaffolded Laravel 12.73.0 fixture with the local Composer snapshots completed package discovery and `artisan --version`. No generated project was installed from verified public package repositories because the npm packages return 404 and Packagist vendor ownership is not confirmed. Do not treat the fixture as public registry or Generator install acceptance.
+
+Playwright's safety preflight now refuses to migrate unless the process environment explicitly selects SQLite, the database is the newly created regular file under that run's unique temporary directory, DB_URL is blank, and framework caches use the run's unique cache location. See [Phase 12 browser evidence](phase12-admin-ui-refinement-implementation-report.md).
+
+The release gate remains **PARTIAL** until verified external identities and published package versions allow a public consumer install and a full Project Generator host installation.

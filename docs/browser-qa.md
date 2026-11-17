@@ -5,7 +5,7 @@ The project uses Playwright Test with its locally installed Chromium browser. Th
 ## Prerequisites
 
 - Node.js and npm installed, with `npm.cmd install` already completed.
-- PHP 8.2+ available on `PATH`, or set `PHP_BINARY` to the intended executable.
+- PHP 8.4+ available on `PATH`, or set `PHP_BINARY` to the intended executable.
 - Laravel Composer dependencies installed.
 - A production Vite build present at `public/build/manifest.json`.
 - Chromium installed with `npx.cmd playwright install chromium`.

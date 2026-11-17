@@ -32,3 +32,14 @@ Both routes require `auth:sanctum` and `view-audit-logs`. The Vue screen is read
 ## Verification
 
 Automated package tests use PHPUnit's SQLite `:memory:` database. SQLite does not prove MySQL row-locking, index-size, privilege, JSON, or collation behavior. Before release, validate the migration, least-privilege DB account, approved retention and purge policy, trusted-proxy configuration, and concurrent/transaction behavior against an isolated MySQL instance. Complete authenticated browser acceptance in the host UI. Never run the migration against a configured application database without separate explicit approval.
+
+
+## External npm installation
+
+After this package and its dependencies have been published to the verified public npm scope, install it in a consumer project with:
+
+```sh
+npm install @itassistance-bd/audit-logs
+```
+
+The package is not asserted to be published by this source repository. Until the publisher confirms registry availability and releases a compatible version, use the repository workspace setup described in the root README.

@@ -37,9 +37,6 @@ final class AuditEventCatalog
         'settings.group_updated' => ['category' => 'settings', 'metadata' => ['group', 'changed_keys'], 'snapshots' => []],
         'settings.group_reset' => ['category' => 'settings', 'metadata' => ['group', 'changed_keys'], 'snapshots' => []],
         'settings.brand_asset_changed' => ['category' => 'settings', 'metadata' => ['asset_type'], 'snapshots' => []],
-        'category.created' => ['category' => 'categories', 'metadata' => ['changed_fields'], 'snapshots' => []],
-        'category.updated' => ['category' => 'categories', 'metadata' => ['changed_fields'], 'snapshots' => []],
-        'category.deleted' => ['category' => 'categories', 'metadata' => [], 'snapshots' => []],
     ];
 
     /** @return array{category: string, metadata: list<string>, snapshots: list<string>}|null */

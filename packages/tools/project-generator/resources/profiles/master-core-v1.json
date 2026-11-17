@@ -150,8 +150,8 @@
   "toolchain": {
     "php": "^8.2",
     "laravel": "^12.0",
-    "node": null,
-    "npm": null,
+    "node": "^20.19.0 || >=22.12.0",
+    "npm": ">=7",
     "frontend": {
       "vue": "^3.5.43",
       "vite": "^7.3.0",
