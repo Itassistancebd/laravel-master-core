@@ -1,7 +1,7 @@
 # Phase 10 - Official Package Identity Migration and Final Verification
 
 **Date:** 2026-11-17
-**Status:** **PARTIAL** - local migration and regression checks pass; external npm and Composer identity/consumer gates remain unresolved.
+**Historical status as of 2026-11-17:** **PARTIAL** - local migration and regression checks passed; external npm and Composer identity/consumer gates were unresolved at that time. See the current distribution and release status at the end of this report.
 
 ## Identity verification
 
@@ -75,3 +75,7 @@ Release validation passed: all ten npm packages built and `npm pack --dry-run` p
 Browser revalidation passed: `npm.cmd run test:e2e:responsive` passed 5 tests and `npm.cmd run test:e2e` passed 8 tests. Both used run-specific temporary SQLite files; the runner now verifies SQLite selection, temporary database path, empty DB_URL, and unique cache destinations before migration. Screenshots and HTML reports are under `artifacts/browser-qa/2026-11-17T185206463Z-004700/` and `artifacts/browser-qa/2026-11-17T185654689Z-6d055c/` (155 and 171 PNGs respectively). No unexpected JavaScript errors, application API failures, or horizontal page overflow assertions remained. Expected 401/403 and the documented isolated-session 501 are classified in the suite.
 
 The existing PHP 8.4.27 `php_zip.dll` was enabled only for this checkout through ignored `.php-runtime.local.json` and the project wrappers; `php.ini`, global PATH, and XAMPP1 were not changed. Phase 10 and Phase 11 remain **PARTIAL** until vendor/account settings and package publication are authorized and a real trusted public consumer install passes. No package was published, no database migration targeted the configured MySQL database, and no commit or push was made.
+
+## Current release status - 2026-11-19
+
+The preceding status and registry observations are historical. All ten public npm packages are now verified at `0.1.0`. The public global CLI successfully generated a Laravel host from the existing GitHub monorepo using all 12 Composer path repositories and ten npm workspaces; no Packagist submission was needed. Root `VERSION` is prepared locally as `1.0.0` for proposed tag `v1.0.0`; it remains unpublished pending authorization. See the [current integrated acceptance report](phase10-11-integrated-distribution.md).

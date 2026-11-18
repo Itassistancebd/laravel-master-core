@@ -6,17 +6,22 @@ Laravel Master Core is a modular Laravel 12 codebase with a Laravel development 
 
 ## Project status and package identity
 
-- The repository contains ten npm workspaces under `@itassistance-bd`. Authenticated npm verification confirmed account `itassistancebd` is an organization owner with account 2FA enabled; all ten package names currently return registry 404.
-- Composer package names still use the `example/` placeholder vendor. The candidate vendor has not been verified, and external Composer distribution is not ready.
-- Phase 10 external package publication remains **PARTIAL**: Composer vendor ownership is unverified and the ten npm package names are not published. Global project generation avoids publishing internal packages by resolving all 12 Composer packages and 10 npm workspaces from the included monorepo. Phase 11 local generation remains **PARTIAL** until third-party installation and clean Windows generation complete. See the [integrated distribution implementation report](docs/architecture/phase10-11-integrated-distribution.md), [identity migration report](docs/architecture/phase10-package-identity-migration-record.md), and [roadmap](docs/architecture/master-roadmap.md).
+- All ten npm packages have been published. Composer package names retain the `example/` placeholder vendor and are intentionally not published to Packagist.
+- Phase 10 package delivery uses the existing GitHub monorepo as the source for all 12 Composer packages and 10 npm workspaces. Phase 11 generation has passed a clean Windows end-to-end run from the public GitHub bootstrap through `master new example-app`; see the [GitHub distribution verification](docs/development/github-distribution.md), [global CLI guide](docs/development/global-cli.md), and [roadmap](docs/architecture/master-roadmap.md).
+
+## Versioning and release policy
+
+The Laravel Master Core application and global CLI use Semantic Versioning. `VERSION` stores the bare `MAJOR.MINOR.PATCH` value; Git release tags use a leading `v`. The local release candidate is prepared as `1.0.0` (`v1.0.0`, initial stable release), but it has not been committed, tagged, or published. A release requires explicit authorization. Bug fixes use `v1.0.1`, backward-compatible features use `v1.1.0`, and breaking changes use `v2.0.0`. See the [release and update guide](docs/development/release-and-updates.md).
+
+The ten published npm workspaces have their own package version line and remain at `0.1.0`. The application/CLI version does not change their versions. Internal Composer package sources remain in this monorepo and are resolved by local path repositories; Packagist submission is not required.
 
 ## Global CLI readiness
 
-A Windows bootstrap installer and `master` command are now prepared in this source tree. The existing public `main` branch has not been updated with these files, so the bootstrap command is **not yet available from GitHub**. Do not run the remote install command until an authorized source update includes `install.ps1` and `scripts/master-cli.ps1`.
+A Windows bootstrap installer and `master` command are available from the existing public GitHub `main` branch. The bootstrap URL and `master new example-app` were verified on 2026-11-19 against commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`.
 
 `master new example-app` downloads the canonical monorepo archive and delegates to the Phase 11 Generator's monorepo-template installer. It copies the existing Laravel application rather than creating a Laravel skeleton. All Composer Core packages resolve from the included relative path repositories, and npm Core packages resolve from local workspaces; Composer/npm use their normal registries for third-party dependencies. Generation validates the output, prepares `.env`, creates an application key, runs package discovery, installs/builds frontend dependencies, and does not run migrations or seeders. `master status`, `master changes`, and `master publish --dry-run` inspect this source repository; `master publish` requires path-by-path staging approval followed by separate commit and push confirmations. See the [global CLI guide](docs/development/global-cli.md), [GitHub distribution status](docs/development/github-distribution.md), and [release/update guide](docs/development/release-and-updates.md).
 
-After the installer is included on the public branch, the planned Windows setup and project commands are:
+Windows setup and project commands:
 
 ```powershell
 irm https://raw.githubusercontent.com/Itassistancebd/laravel-master-core/main/install.ps1 | iex
@@ -25,7 +30,7 @@ cd example-app
 php artisan serve
 ```
 
-The public bootstrap and project generation commands become available to fresh PCs only after the installer, CLI, and template-generator changes are published to the existing `main` branch. Local implementation acceptance is being verified separately.
+The public bootstrap and project generation commands are available to fresh Windows PCs with the documented PHP, Composer, Git, Node.js, and npm prerequisites. The public run generated and verified the application in a clean temporary directory. The local v1.0.0 candidate remains unpublished pending authorization; no commit, push, or tag was created for it.
 
 For an existing generated host, review the [release and update guide](docs/development/release-and-updates.md); `master update` updates the CLI only. If installation fails, record the command, Windows and PowerShell versions, PHP/Composer/Git versions, and the error text after removing credentials and private paths. Use the repository's GitHub Issues page only if Issues are enabled; never attach `.env`, logs containing credentials, databases, private keys, or user data.
 
@@ -81,7 +86,7 @@ The local source uses npm workspaces and Composer path repositories for developm
 
 ## License
 
-Laravel Master Core is licensed under the MIT License. See [LICENSE](LICENSE) for the complete terms. You may use, copy, modify, distribute, sublicense, or sell copies subject to those terms; include the copyright and permission notice with copies or substantial portions. The license also includes its warranty disclaimer. The project has not been published or released.
+Laravel Master Core is licensed under the MIT License. See [LICENSE](LICENSE) for the complete terms. You may use, copy, modify, distribute, sublicense, or sell copies subject to those terms; include the copyright and permission notice with copies or substantial portions. The license also includes its warranty disclaimer. The ten npm packages are published; no tagged full-application release is claimed here.
 
 ## Settings module
 
@@ -158,14 +163,14 @@ Phase 10 provides a recipient-scoped in-app inbox with read state. It is separat
 - [Phase 10 proposal and implementation decisions](docs/architecture/phase10-notifications-proposal.md)
 - [Phase 10 completion report](docs/architecture/phase10-notifications-completion.md)
 
-## Phase 10 - Master Core Package (IMPLEMENTED LOCALLY; DISTRIBUTION PARTIAL)
+## Phase 10 - Master Core Package (IMPLEMENTED; MONOREPO DISTRIBUTION)
 
 - [Master Core Package implementation proposal](docs/architecture/phase10-master-core-package-proposal.md)
 - [Installation and compatibility guide](docs/architecture/master-core-package-installation.md)
 - [Package identity and release proposal](docs/architecture/phase10-package-identity-and-release-proposal.md)
 - [Implementation report](docs/architecture/phase10-master-core-package-implementation-report.md)
 
-## Phase 11 - Project Generator (LOCALLY IMPLEMENTED; GENERATED-HOST ACCEPTANCE PARTIAL)
+## Phase 11 - Project Generator (END-TO-END VERIFIED FROM PUBLIC GITHUB SOURCE)
 
 - [Project Generator inspection and planning proposal](docs/architecture/phase11-project-generator-proposal.md)
 - [Project Generator CLI usage and troubleshooting](docs/architecture/phase11-project-generator-usage.md)

@@ -3,7 +3,7 @@
 **Status:** Internal proposal only; publisher and registry ownership remain unverified.
 **Date:** 2026-11-17
 
-> **Update 2026-11-17:** See the [official identity migration record](phase10-package-identity-migration-record.md). The ten npm workspace identities now use the owner-confirmed `@itassistance-bd` scope. Registry ownership could not be independently checked. Composer `example/` names remain unchanged because the `itassistance-bd` candidate is unverified.
+> **Current distribution note - 2026-11-19:** The ten npm packages have been published at `0.1.0`; do not republish or change them for the application release. The supported global installer resolves the 12 internal Composer packages from the existing GitHub monorepo, so Packagist submission is not required. This proposal's separate Composer package publication path remains unadopted. See the [current identity migration record](phase10-package-identity-migration-record.md) and [integrated distribution report](phase10-11-integrated-distribution.md).
 
 ## Identity visible in this checkout
 

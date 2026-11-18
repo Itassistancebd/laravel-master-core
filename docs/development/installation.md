@@ -2,9 +2,11 @@
 
 ## Status
 
-The local source tree contains `install.ps1`, but the current published GitHub `main` commit does not. The remote bootstrap command will work only after a separately authorized source update publishes the installer and CLI files. As of this report, the published baseline is `9ec7976c27492ff12fa05f309d7befbc8d8d2592`.
+The bootstrap installer is available from the current public GitHub `main` branch. On 2026-11-19 the raw installer URL returned HTTP 200, and the complete bootstrap plus `master new example-app` workflow passed against commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66` in a clean temporary directory. See [GitHub distribution verification](github-distribution.md).
 
-## Install after the installer is published
+The local release candidate is prepared as `1.0.0`, but the public branch remains at `0.1.0-dev` until a release is approved and published. Installed CLI version output reflects the `VERSION` file bundled in that specific source snapshot.
+
+## Install
 
 Open PowerShell and run:
 
@@ -21,11 +23,11 @@ master --help
 master --version
 ```
 
-The Windows installer requires Windows PowerShell 5.1 or PowerShell 7 on Windows. Project generation requires PHP 8.4+, Composer 2+, Git 2+, Node.js 20.19+ or 22.12+, and npm 7+ because the bundled Laravel application installs and builds its frontend. Git is required for maintainer source commands. These checks do not make an unavailable package source available.
+The Windows installer requires Windows PowerShell 5.1 or PowerShell 7 on Windows. Project generation requires PHP 8.4+, Composer 2+, Git 2+, Node.js 20.19+ or 22.12+, and npm 7+ because the bundled Laravel application installs and builds its frontend. Git is required for maintainer source commands.
 
-## Current limitation
+## Generated project behavior
 
-The installer and CLI are implemented locally, but the published `main` branch does not yet include the new installer, so fresh-PC bootstrap cannot work until the first authorized source publication. Project generation uses Laravel and third-party dependencies from the normal Composer/npm registries, while resolving all internal Core packages from included monorepo source.
+`master new` copies the existing Laravel application from the GitHub monorepo, installs internal Core packages from local monorepo paths/workspaces, creates `.env`, generates an application key, verifies Artisan and package discovery, and builds the frontend. It does not create a Laravel skeleton or run database migrations or seeders. Existing projects are never overwritten; failed staging output is preserved for inspection.
 
 ## Installation errors
 

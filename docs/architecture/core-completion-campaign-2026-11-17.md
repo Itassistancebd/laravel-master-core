@@ -2,6 +2,8 @@
 
 > **Current product note:** The Categories pilot described below has since been removed from the current product. Its historical migration is retained; no existing database data was deleted.
 
+> **Historical campaign status (2026-11-17):** Phase 10/11 publication and public-generation notes below describe the campaign date. The later public GitHub generation and `v1.0.0` preparation status is recorded in the [current integrated report](phase10-11-integrated-distribution.md) and [roadmap](master-roadmap.md).
+
 **Date:** 2026-11-17
 **Overall:** **PARTIAL — do not start Phase 16 yet.**
 **Scope:** Campaign Phases 4, 6, 8, 10, 11, 12, and 14. No Plugin System implementation was started.

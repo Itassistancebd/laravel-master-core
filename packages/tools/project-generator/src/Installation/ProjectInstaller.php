@@ -171,17 +171,21 @@ POWERSHELL;
 
     private function copyMonorepoTemplate(string $source, string $stage): void
     {
+        $excludedFiles = [
+            'database/migrations/2026_11_17_000000_create_categories_table.php',
+        ];
         $excludedDirectories = [
             '.git', '.idea', '.vscode', 'vendor', 'node_modules', 'dist', 'build', 'artifacts', 'backups', 'backup',
             'test-results', 'playwright-report', '.phpunit.cache', '.cache',
         ];
-        $copyDirectory = function (string $directory, string $relativeDirectory = '') use (&$copyDirectory, $stage, $excludedDirectories): void {
+        $copyDirectory = function (string $directory, string $relativeDirectory = '') use (&$copyDirectory, $stage, $excludedDirectories, $excludedFiles): void {
             foreach (new \DirectoryIterator($directory) as $item) {
                 if ($item->isDot()) { continue; }
                 $relative = ltrim($relativeDirectory.'/'.$item->getFilename(), '/');
                 $relative = str_replace('\\', '/', $relative);
                 $segments = explode('/', $relative);
                 $base = basename($relative);
+                if (in_array(strtolower($relative), $excludedFiles, true)) { continue; }
                 if (array_intersect(array_map('strtolower', $segments), $excludedDirectories) !== []) { continue; }
                 if (preg_match('~(^|/)\.env(?!\.example$)[^/]*$~i', $relative) === 1
                     || in_array(strtolower($base), ['.php-runtime.local.json', '.npmrc', 'auth.json', 'composer-auth.json'], true)

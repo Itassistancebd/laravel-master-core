@@ -1,7 +1,6 @@
 # Phase 11 — Project Generator Proposal
 
-> **Status: LOCALLY IMPLEMENTED; GENERATED-HOST ACCEPTANCE PARTIAL**
-> **Implementation report:** [Phase 11 Project Generator implementation report](phase11-project-generator-implementation-report.md). The CLI and local test workflow are implemented. Current placeholder Composer/npm namespaces remain rejected for network installs until ownership and trusted registries are verified.
+> **Current status - 2026-11-19:** The public GitHub global CLI and existing-app template generation passed end to end; all 12 Composer packages resolve from monorepo paths. The separate feature-selection registry mode retains its trusted-source checks. The application/CLI `1.0.0` release candidate is local and unpublished pending authorization. See the [implementation report](phase11-project-generator-implementation-report.md), [GitHub acceptance record](../development/github-distribution.md), and [SemVer release guide](../development/release-and-updates.md).
 
 ## 1. Purpose
 

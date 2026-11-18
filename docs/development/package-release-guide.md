@@ -1,8 +1,8 @@
 # Controlled Package Release Guide
 
-This guide prepares local npm and Composer artifacts. It does not publish packages, create repositories, or assert external identity ownership. The Laravel Master Core npm organization owner was verified as `itassistancebd`; the candidate Composer vendor `itassistance-bd` is still unverified at Packagist.
+**Status update (2026-11-19):** all ten npm packages have been published at `0.1.0`. Do not republish them or change their published versions as part of Phase 10/11 completion. Composer Core packages remain monorepo path dependencies and are intentionally not submitted to Packagist; the public GitHub generator workflow has passed end to end. The publication procedures below are for a separately approved future npm version only.
 
-> **Current distribution policy:** Keep the 12 Composer packages and 10 npm packages inside this monorepo. Do not submit or publish internal packages, create package repositories, or claim Composer vendor ownership. Generated projects resolve internal dependencies from local monorepo sources and use normal Composer/npm registries for third-party dependencies. See the [GitHub monorepo distribution status](github-distribution.md).
+> **Current distribution policy:** Keep the 12 Composer package sources inside this monorepo and do not submit them to Packagist. The ten npm package releases are complete. Generated projects resolve internal dependencies from local monorepo sources and use normal Composer/npm registries for third-party dependencies. See the [GitHub monorepo distribution status](github-distribution.md).
 
 ## npm packages
 
@@ -15,7 +15,7 @@ $report = Join-Path $env:TEMP 'master-core-npm-release-dry-run.json'
 npm.cmd run release:npm:dry-run -- --report=$report
 ```
 
-The dependency order is derived from workspace `dependencies`. Confirm that all intended names are registered and installable before a separately approved release. In this checkout all ten registry metadata checks returned 404, so none has a public consumer-install PASS.
+The dependency order is derived from workspace `dependencies`. The ten package versions have already been published; do not rerun publication for Phase 10/11 completion. The earlier 404 checks below describe the pre-publication state at the time of the original report. This release guide is repository maintainer documentation; its dry-run commands are not application installation requirements.
 
 The clean local consumer check packs the built workspaces into temporary tarballs, installs those tarballs into a new temporary project, and imports each package. It disables lifecycle scripts and does not use workspace links. Third-party dependencies resolve from npmjs.org; the Core packages come from local tarballs.
 
@@ -34,11 +34,13 @@ Review each result before proceeding. No bulk command in this repository publish
 
 ### Controlled GitHub Actions release
 
-The repository includes `.github/workflows/publish-npm-package.yml`, a manual one-package release workflow. It runs only from `main`, requires the exact `PUBLISH_PUBLICLY` confirmation, runs frontend tests, typecheck, identity validation, and package dry-run checks, then checks that the selected immutable version is unused and every required internal npm dependency is already public. It publishes one selected package with public access and provenance, then creates a package-specific Git tag and GitHub Release with generated release notes. The registry dependency check enforces publication order.
+The repository includes `.github/workflows/publish-npm-package.yml`, a manual one-package release workflow. It runs only from `main`, requires the exact `PUBLISH_PUBLICLY` confirmation, runs frontend tests, typecheck, identity validation, and package dry-run checks, then checks that the selected immutable version is unused and every required internal npm dependency is already public. It publishes one selected package with public access and provenance, then creates a package-specific Git tag and GitHub Release with generated release notes. The registry dependency check enforces publication order. This is a separate maintainer release workflow and is not required by the application installer or project generator.
+
+The repository also contains a separate maintainer-only batch publisher at `scripts/publish-npm-batch.mjs`. It is excluded from the Laravel Master Core v1.0.0 application release, and the related root `package.json` command is excluded as well. Application installation and project generation do not depend on `npm.cmd run release:all`. Do not run the publisher without separate release authorization.
 
 Before this workflow can run from GitHub, a maintainer must configure the protected `npm-publication` environment and require its approval. For initial publication, add an npm granular publish token as that environment's `NPM_TOKEN` secret, scoped to the intended packages and with 2FA bypass only if npm requires it for automation. Never put the token in this repository. Once a package exists, npm Trusted Publishing can be configured for that package using organization `Itassistancebd`, repository `laravel-master-core`, workflow filename `publish-npm-package.yml`, and environment `npm-publication`; the workflow requests `id-token: write` and publishes with provenance. Trusted Publisher configuration is per package and must be set in npm's package settings. A local npm session requiring an OTP does not satisfy the Actions secret requirement. The workflow has not been activated or run from GitHub in this checkout.
 
-Current account verification is separate from publication readiness: the authenticated account is an organization owner and its account-level 2FA mode is `auth-and-writes`; npm requires a one-time password for local publication. Organization-wide 2FA enforcement has not been verified. All ten package metadata requests currently return 404, so package publication has not occurred and public consumer installation remains unverified.
+The following account and publication notes record the state before the completed ten-package publication. They are retained as history and do not authorize another publication. Current project generation resolves internal npm workspaces from the downloaded monorepo source.
 
 ## Composer package snapshots
 
@@ -74,20 +76,20 @@ The generator never runs migrations or seeders, grants permissions, or provision
 
 ## Current evidence and remaining gates
 
-- npm: ten local builds, pack dry-runs, and local tarball consumer checks pass; all ten registry names returned 404.
+- npm: ten package publication is complete; the public GitHub generator was also verified to install and build local monorepo workspaces.
 - Composer: all twelve local snapshots validate structurally and resolve through a local path repository. Packagist vendor ownership and package availability remain unverified.
 - Full external consumer install and registry-backed generated Laravel host remain blocked until packages and trusted Composer identity/repositories are available.
 - Do not mark Phase 10 or Phase 11 complete until public registry installs and a real generated host bootstrap pass.
 
 ## Final release verification - 2026-11-18
 
-The current npm dry-run report is `%TEMP%\lmcore-npm-release-dry-run-master-command-20261118.json`; all ten packages built and dry-run packed in manifest-derived dependency order. The matching clean consumer report is `%TEMP%\lmcore-npm-local-consumer-master-command-20261118\consumer-validation.json`; it installed and imported all ten local tarballs without workspace links. All ten live registry package requests returned HTTP 404.
+The npm dry-run and local consumer reports below are historical pre-publication artifacts. They must not be used to infer current registry availability or trigger another package publication.
 
 The current Composer snapshot validator and manifest checks pass for twelve exported packages and thirteen source manifests. A clean consumer installed all twelve local snapshots using `--prefer-dist`; 96 third-party dist archives were extracted successfully after enabling existing PHP 8.4 ZIP support via ignored local runtime configuration. The candidate vendor remains unverified and was used only in local fixture paths.
 
-The Generator CLI dry-run validates configured Composer/npm identities for planning but states ownership is not verified. A manual Laravel scaffold with local snapshots bootstrapped separately; public trusted-source installation remains blocked. See the [integrated Phase 10/11 report](../architecture/phase10-11-integrated-distribution.md).
+The standalone registry-based Generator mode retains its trusted-source checks. The supported global CLI uses monorepo source resolution and passed public GitHub end-to-end generation. See the [integrated Phase 10/11 report](../architecture/phase10-11-integrated-distribution.md).
 
-## Packagist first-publication gate - 2026-11-18
+## Historical Packagist first-publication gate - 2026-11-18
 
 Packagist reads the `composer.json` at the root of the VCS repository. The published monorepo at `https://github.com/Itassistancebd/laravel-master-core` has a development-app root manifest (`example/laravel-master-core-development-app`, `type: project`); it is not the intended `itassistance-bd/laravel-master-core` package. The Core package is nested at `packages/core/master-core`, and Packagist does not publish it from that subdirectory. Do not submit the monorepo URL for the intended package. Changing the root manifest would misidentify the development host and its local path repositories.
 
@@ -105,7 +107,7 @@ Set-Location master-core-consumer
 composer require itassistance-bd/laravel-master-core:^0.1 --no-interaction
 ```
 
-That is a future check only. Current public installation is BLOCKED by the 404 package endpoint.
+That consumer flow applies only if a separately approved Composer package distribution is established. It is not required for the supported global installer, which resolves all internal packages from the GitHub monorepo.
 
 The inspected internal dependency graph is: Foundation has no internal dependency; Core, Settings, Auth, and Module Manager depend on Foundation; User Management depends on Foundation and Auth; Roles & Permissions depends on Foundation and User Management; System Health and Notifications depend on Foundation and Roles & Permissions; Audit Logs, CRUD Engine, and Project Generator have no internal Composer dependency. This establishes the order constraints, not publication readiness.
 

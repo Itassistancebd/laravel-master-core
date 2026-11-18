@@ -1,12 +1,12 @@
 # Global CLI and monorepo distribution architecture
 
-**Status: PARTIAL.** This implementation keeps `Itassistancebd/laravel-master-core` as the only source repository and reuses the Phase 11 Project Generator's new monorepo-template installation path.
+**Status: PASS for public bootstrap and monorepo project generation (verified 2026-11-19).** The implementation keeps `Itassistancebd/laravel-master-core` as the only source repository and reuses the Phase 11 Project Generator's monorepo-template installation path. Maintainer publication actions and the formal v1.0.0 release remain approval-gated.
 
 ## CLI installation
 
 The PowerShell bootstrap reads the repository's public `main` SHA from GitHub, downloads that immutable ZIP archive, rejects extraction paths outside a temporary workspace, checks required payload files, and installs versioned CLI files beneath `%LOCALAPPDATA%\Programs\MasterCore`. It writes only a managed launcher and current-version pointer at the install root. User configuration remains outside the installation folder. The optional PATH update writes only the current user's Environment key and is idempotent.
 
-The current public branch does not include this implementation. Bootstrap is therefore unavailable until an approved source publication.
+The public `main` branch contains the bootstrap. Its raw URL returned HTTP 200, and the installer ran from a clean temporary CLI location against commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`.
 
 ## Project generation and dependency resolution
 
@@ -20,9 +20,8 @@ The maintenance CLI is restricted to the canonical existing GitHub remote and `m
 
 ## Release gates
 
-- Publish installer/CLI source to the existing repository only after review and explicit approval.
-- Publish the reviewed installer/CLI/generator changes to the existing repository before fresh-PC use.
-- Verify third-party Composer and npm access with two clean Windows project generations before claiming complete public acceptance.
+- Keep npm workspace package versions at the already published `0.1.0`; do not republish them for the application/CLI release.
+- Prepare the root `VERSION` as bare `1.0.0` and the changelog for `v1.0.0`; do not create a tag or publish without explicit approval.
 - Exercise remote update races, secret exclusions, and confirmed publish behavior in a disposable Git fixture before enabling maintainer publication.
 
 ## Local implementation verification - 2026-11-18
@@ -39,3 +38,9 @@ The maintenance CLI is restricted to the canonical existing GitHub remote and `m
 - `master update` downloaded the current public GitHub archive but rejected it because the published baseline lacks `VERSION` and the new installer/CLI payload; the installed version pointer remained unchanged. The raw public `install.ps1` URL returns HTTP 404.
 
 These checks cover local shell and safety behavior. They do not pass the public install, clean project generation, Composer package discovery, frontend install/build, or maintainer commit/push acceptance gates.
+
+## Public acceptance and version preparation - 2026-11-19
+
+The preceding local implementation results are historical. The public-source run verified bootstrap installation and `master new example-app` through Composer validation/install, Artisan key generation, package discovery, npm workspace installation, and frontend build. It generated `.env`, preserved the Dashboard, omitted the Categories feature, and did not run migrations or seeders. The 12 internal Composer packages resolve from monorepo path repositories; the ten npm workspaces remain local in the generator and their published package version is `0.1.0`.
+
+Application/CLI Semantic Versioning is prepared independently: root `VERSION` is `1.0.0`, with the proposed tag `v1.0.0` for the initial stable release. The marker change is local and unpublished pending approval. npm package versions remain unchanged. Packagist publication is not required for monorepo-based global generation.

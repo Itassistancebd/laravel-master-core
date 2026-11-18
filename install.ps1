@@ -13,6 +13,7 @@ if ($PSVersionTable.PSVersion -lt [version]'5.1') { throw 'The Master Core insta
 $RepositoryOwner = 'Itassistancebd'
 $RepositoryName = 'laravel-master-core'
 $RepositoryBranch = 'main'
+. (Join-Path $PSScriptRoot 'scripts/git-ref-parser.ps1')
 if ([string]::IsNullOrWhiteSpace($InstallRoot)) {
     $InstallRoot = Join-Path $env:LOCALAPPDATA 'Programs\MasterCore'
 }
@@ -35,15 +36,15 @@ function Get-SourceRoot {
         $commit = if ($SourceCommit) { $SourceCommit } else { 'local-archive' }
         $ref = $SourceRef
     } else {
-        $headers = @{ 'User-Agent' = 'Laravel-Master-Core-Installer'; 'Accept' = 'application/vnd.github+json' }
-        $release = $null
-        try { $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepositoryOwner/$RepositoryName/releases/latest" -Headers $headers -TimeoutSec 15 } catch { $release = $null }
-        if ($release -and $release.tag_name) { $ref = [string] $release.tag_name }
-        $commitRecord = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepositoryOwner/$RepositoryName/commits/$ref" -Headers $headers -TimeoutSec 30
-        $commit = [string] $commitRecord.sha
-        if ($commit -notmatch '^[0-9a-f]{40}$') { throw 'GitHub returned an invalid source commit identifier.' }
+        if ($ref -notmatch '^(refs/(heads|tags)/)?[A-Za-z0-9._/-]+$') { throw 'SourceRef contains unsupported characters.' }
+        $repositoryUrl = "https://github.com/$RepositoryOwner/$RepositoryName.git"
+        $queryRef = if ($ref.StartsWith('refs/tags/')) { $ref } elseif ($ref.StartsWith('refs/heads/')) { $ref } else { "refs/heads/$ref" }
+        $remoteLines = @(& git ls-remote --exit-code $repositoryUrl $queryRef "$queryRef^{}" 2>$null)
+        $gitExitCode = $LASTEXITCODE
+        $commit = Resolve-MasterCoreGitRefCommit -RemoteLines $remoteLines -Ref $ref
+        if ($gitExitCode -ne 0 -or -not $commit) { throw "Could not resolve the public GitHub ref '$ref' to a valid commit." }
         $archive = Join-Path $tempRoot 'source.zip'
-        Invoke-WebRequest -Uri "https://api.github.com/repos/$RepositoryOwner/$RepositoryName/zipball/$commit" -Headers $headers -OutFile $archive -TimeoutSec 120
+        Invoke-WebRequest -Uri "https://codeload.github.com/$RepositoryOwner/$RepositoryName/zip/$commit" -OutFile $archive -TimeoutSec 180 -UseBasicParsing
     }
     $extract = Join-Path $tempRoot 'source'
     New-Item -ItemType Directory -Path $extract | Out-Null
@@ -88,7 +89,7 @@ function Get-SourceRoot {
 
 function Assert-DistributionTree([string] $Root) {
     $required = @(
-        'VERSION', 'install.ps1', 'scripts/master-cli.ps1', 'composer.json', 'package.json',
+        'VERSION', 'install.ps1', 'scripts/master-cli.ps1', 'scripts/git-ref-parser.ps1', 'composer.json', 'package.json',
         'packages/tools/project-generator/bin/master-core',
         'packages/tools/project-generator/resources/profiles/master-core-v1.json',
         'packages/tools/project-generator/src/Console/Application.php',
@@ -119,7 +120,7 @@ function Assert-NoReparsePath([string] $Path) {
 
 function Get-PayloadFiles([string] $Root) {
     $files = [Collections.Generic.List[string]]::new()
-    foreach ($path in @('VERSION', 'install.ps1', 'scripts/master-cli.ps1', 'composer.json', 'package.json')) {
+    foreach ($path in @('VERSION', 'install.ps1', 'scripts/master-cli.ps1', 'scripts/git-ref-parser.ps1', 'composer.json', 'package.json')) {
         $files.Add((Join-Path $Root $path))
     }
     foreach ($file in Get-ChildItem -LiteralPath (Join-Path $Root 'packages/tools/project-generator') -File -Recurse) {

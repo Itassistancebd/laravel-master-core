@@ -9,6 +9,7 @@ $PayloadRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $InstallRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..\..')).Path
 $MetadataPath = Join-Path $PSScriptRoot '..\..\install.json'
 $MetadataPath = [IO.Path]::GetFullPath($MetadataPath)
+. (Join-Path $PSScriptRoot 'git-ref-parser.ps1')
 
 function Get-Metadata {
     if (-not (Test-Path -LiteralPath $MetadataPath -PathType Leaf)) { return $null }
@@ -314,12 +315,13 @@ function Invoke-NewProject([string[]] $CliArguments) {
             $sourceRef = 'local-development-source'
             $sourceCommit = 'local-source'
         } else {
-            $headers = @{ 'User-Agent' = 'Laravel-Master-Core-CLI'; 'Accept' = 'application/vnd.github+json' }
-            $commitRecord = Invoke-RestMethod -Uri "https://api.github.com/repos/$Owner/$Repository/commits/$ExpectedBranch" -Headers $headers -TimeoutSec 30
-            $sourceCommit = [string] $commitRecord.sha
-            if ($sourceCommit -notmatch '^[0-9a-f]{40}$') { throw 'GitHub returned an invalid source commit identifier.' }
+            $queryRef = "refs/heads/$ExpectedBranch"
+            $remoteLines = @(& git ls-remote --exit-code $RepositoryUrl $queryRef 2>$null)
+            $gitExitCode = $LASTEXITCODE
+            $sourceCommit = Resolve-MasterCoreGitRefCommit -RemoteLines $remoteLines -Ref $ExpectedBranch
+            if ($gitExitCode -ne 0 -or -not $sourceCommit) { throw "Could not resolve the public GitHub branch '$ExpectedBranch' to a valid commit." }
             $sourceRef = $ExpectedBranch
-            Invoke-WebRequest -Uri "https://api.github.com/repos/$Owner/$Repository/zipball/$sourceCommit" -Headers $headers -OutFile $archive -TimeoutSec 180
+            Invoke-WebRequest -Uri "https://codeload.github.com/$Owner/$Repository/zip/$sourceCommit" -OutFile $archive -TimeoutSec 180 -UseBasicParsing
             if (-not (Test-Path -LiteralPath $archive -PathType Leaf) -or (Get-Item -LiteralPath $archive).Length -lt 4 -or (Get-Item -LiteralPath $archive).Length -gt 500MB) {
                 throw 'The GitHub source archive is empty or exceeds the 500 MB safety limit.'
             }

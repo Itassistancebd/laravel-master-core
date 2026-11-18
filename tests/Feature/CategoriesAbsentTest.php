@@ -24,6 +24,12 @@ final class CategoriesAbsentTest extends TestCase
             ['categories.view', 'categories.create', 'categories.update', 'categories.delete'],
             array_keys($extensions),
         ));
+        self::assertSame([], array_intersect(
+            ['categories.view', 'categories.create', 'categories.update', 'categories.delete'],
+            array_keys(config('master-core-roles-permissions.abilities', [])),
+        ));
         self::assertSame([], config('master-core-crud-engine.resources', []));
+        self::assertFileDoesNotExist(resource_path('js/admin/CategoriesPage.vue'));
+        self::assertStringNotContainsString('categories', file_get_contents(resource_path('js/admin/routes.ts')));
     }
 }

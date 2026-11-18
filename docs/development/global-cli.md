@@ -22,6 +22,10 @@ The generated project includes all internal Composer package sources and resolve
 
 The CLI uses the fixed repository owner, repository, and branch. Project generation requires PHP 8.4+, Composer 2, Git 2, Node.js, and npm. If `php` on PATH is not the compatible runtime, set `MASTER_CORE_PHP` to the desired `php.exe` path for that terminal. A local development source override is used only for isolated maintainer tests; ordinary users need not provide a URL or package list.
 
-`update` downloads the current public `main` snapshot and installs it as a new version. Existing installed versions and user configuration are preserved. This command requires the published branch to contain the installer/CLI payload; the current public baseline still needs the first source update.
+`master --version` reports the version marker bundled in the installed source snapshot. The prepared application/CLI candidate is `1.0.0`; it becomes a release only after approval and publication. The ten npm workspaces are separately published at `0.1.0` and are not changed by the application release.
+
+`update` downloads the current public `main` snapshot and installs it as a new version. Existing installed versions and user configuration are preserved. The public `main` branch contains the bootstrap installer and CLI payload.
+
+The end-to-end acceptance run on 2026-11-19 used the public bootstrap URL and current `main` commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`, installed the CLI into an isolated temporary directory, and ran `master new example-app` from a clean working directory. Composer installed 12 internal path packages and third-party dependencies; npm installed the ten local workspaces and completed the production build. `.env`, a generated application key, Artisan, and package discovery were verified. No migrations or seeders ran. See [GitHub distribution verification](github-distribution.md).
 
 The maintainer commands work from inside the original Core repository or a subdirectory. They verify `origin` and `main`, list changes, screen sensitive paths/content, and use GitHub's read-only remote reference lookup. `publish --dry-run` does not modify Git state. Actual `publish` requires interactive path selection and separate stage, commit, and push confirmations. It is not intended for generated consumer projects.

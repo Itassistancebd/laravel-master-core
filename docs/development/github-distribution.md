@@ -4,18 +4,24 @@ The existing repository `https://github.com/Itassistancebd/laravel-master-core` 
 
 ## Core source delivery
 
-`install.ps1` downloads an immutable archive for the public `main` commit and installs the versioned CLI and Phase 11 Generator. Archive paths, symbolic links, entry counts, and expanded size are checked before extraction. Local `.env`, PHP runtime overrides, user databases, `vendor`, and `node_modules` are not copied into the installed CLI.
+The public bootstrap installer is available at `https://raw.githubusercontent.com/Itassistancebd/laravel-master-core/main/install.ps1`. It downloads an immutable archive for the public `main` commit and installs the versioned CLI and Phase 11 Generator. Archive paths, symbolic links, entry counts, and expanded size are checked before extraction. Local `.env`, PHP runtime overrides, user databases, `vendor`, and `node_modules` are not copied into the installed CLI.
 
 ## Project dependency resolution
 
-The 12 Composer packages remain inside `packages/` and use `example/` development identities. The template installer verifies each required internal package against the included `packages/**/composer.json` files and resolves them through relative Composer path repositories. Internal npm packages resolve from the ten npm workspaces in the archive. Composer and npm registries are enabled for Laravel and third-party dependencies only. No own package is published to Packagist or npm.
+The 12 Composer packages remain inside `packages/` and use `example/` development identities. Generated projects resolve these packages through relative Composer path repositories; Composer uses its normal registry configuration for Laravel and third-party dependencies. All ten npm packages are published at `0.1.0`, and the generator resolves internal workspaces from the downloaded monorepo archive. No Composer packages are published to Packagist or need Packagist submission for this workflow. The application/CLI version is independent; local `VERSION` is prepared as `1.0.0`, pending approval and publication.
 
-## Acceptance state
+## Acceptance state (verified 2026-11-19)
 
 - One-repository source-of-truth policy: retained.
-- GitHub ZIP download and safe payload extraction: locally implemented; public installer payload is not yet published.
-- Twelve internal Composer packages from a clean archive: validated and installed through relative path repositories by the template installer.
-- Laravel and third-party dependency resolution: normal Composer/npm registries are used.
-- Public `master new` from a fresh PC: BLOCKED until local installer/CLI changes are published to `main`; local template generation is verified separately.
+- Public bootstrap URL: HTTP 200; downloaded 18,059-byte installer SHA-256 `2f1bd9afb293478c9af55963a7b21811828259f3456dd99216bfc849123b0a84`.
+- Bootstrap installation: PASS from public `main` commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`, installed to a clean temporary CLI directory without changing PATH.
+- `master new example-app`: PASS from a clean temporary working directory using the installed public CLI and downloaded GitHub archive.
+- Existing Laravel application template: PASS; no Laravel skeleton was created.
+- Twelve internal Composer package path repositories: present in the generated project; package discovery completed. Composer also installed third-party dependencies.
+- Ten internal npm workspaces: present; `npm ci` and production frontend build completed successfully.
+- `.env`, generated application key, Composer validation, `artisan --version`, and `artisan package:discover`: PASS.
+- Categories feature: absent from generated app routes, Admin pages, and permissions. Remaining audit-log `category` fields classify audit events. The existing dashboard and other modules were copied.
+- Database migrations and seeders: not run.
+- Temporary acceptance workspace: `%TEMP%\MasterCore-phase10-11-94b4cd149faa49cdbe2a73c4d7fb48b1`.
 
-Do not represent the public installer as available until it is published and verified from the public GitHub source. Do not claim a public project generation test until a clean PC runs `master new` from the published CLI.
+The global installer and project generation workflow are available from the existing public repository. No repository, tag, npm package, commit, or push was created by this verification.

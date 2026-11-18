@@ -1,6 +1,6 @@
 # Phase 10 and 11 Integrated Distribution Implementation
 
-**Status: PARTIAL.** The local distribution tooling and generator identity configuration are implemented. Composer vendor ownership, npm organization publishing permissions, registry package availability, split-repository setup, and real external consumer installation remain unverified or blocked. No package was published and no remote repository was created.
+**Historical status snapshot (2026-11-18; superseded by the 2026-11-19 acceptance update below).** At that time the local distribution tooling and generator identity configuration were implemented, while Composer vendor ownership, npm publication, and public-source project generation remained unresolved.
 
 ## Packagist first-publication readiness - 2026-11-18
 
@@ -218,3 +218,15 @@ Coverage included the 17 registered Admin page/state routes at 1440x900, 768x102
 | Security scan | PASS for high-confidence credential/key patterns over 489 Git-managed and unignored files: 0 hits; 0 sensitive filename hits. No dedicated gitleaks/trufflehog binary is installed, so this is a bounded pattern scan, not a full secret-scanner guarantee. `.env` variants and `.php-runtime.local.json` are ignored; `.env.example` is tracked. |
 
 Phase 10 and Phase 11 remain **PARTIAL**. Remaining external actions are authenticated confirmation of Packagist vendor/maintainer access, npm organization-wide 2FA review, authorized package publication and repository/tag registration, followed by public-registry consumer installation and a real Generator-created host build. No package was published; no remote Composer/GitHub repositories were created or registered; local snapshots and tarballs were created only under the documented temporary paths. No GitHub commit or push was made.
+
+## Public GitHub generator acceptance update - 2026-11-19
+
+The preceding sections record earlier snapshots and are historical. In this follow-up, the user confirmed all ten npm package publications were complete; no npm publication or version change was attempted. The public `main` branch was resolved to `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`, and the public bootstrap URL returned HTTP 200.
+
+The downloaded public installer was run with `-SkipPath` into a newly created temporary CLI directory. From a separate clean temporary working directory, that installed public CLI ran `master new example-app`. The workflow succeeded through GitHub archive download and extraction, copying the existing Laravel application, Composer lock refresh/install/validation, Artisan key generation and package discovery, npm workspace install, and production build. Generated output had 12 relative Composer path repositories and ten npm workspaces; `.env`, a non-empty `APP_KEY`, `artisan --version` (Laravel Framework 12.71.0), and a second package-discovery run all passed. The app route/Admin source did not contain the removed Categories feature; dashboard and other application modules were present. No database migration or seeder command ran. Temporary evidence is at `%TEMP%\\MasterCore-phase10-11-94b4cd149faa49cdbe2a73c4d7fb48b1`.
+
+Accordingly, GitHub-based global CLI installation and Phase 11 project generation passed end to end against the public source. Composer package publication to Packagist is not part of this workflow; internal Core sources resolve from the monorepo. No commit, push, tag, GitHub repository, Packagist submission, or npm publication was made during this acceptance run. See [current GitHub distribution verification](../development/github-distribution.md).
+
+## Release version preparation - 2026-11-19
+
+All ten public npm package records were rechecked at exactly `0.1.0`; no package was changed or published during the check. The application and global CLI use a separate SemVer line. Root `VERSION` is prepared locally as bare `1.0.0`, corresponding to the proposed initial stable tag `v1.0.0`. This candidate is not yet a release: no changelog date, commit, push, or tag has been authorized or created. The release policy is documented in [README](../../README.md), [CONTRIBUTING](../../CONTRIBUTING.md), and the [release guide](../development/release-and-updates.md).

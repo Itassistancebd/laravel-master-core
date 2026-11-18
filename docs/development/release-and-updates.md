@@ -4,7 +4,20 @@
 
 `VERSION` is the source version marker. Installed metadata records the version, GitHub ref, and immutable commit SHA. `master update` delegates to the versioned installer, which reads the current public `main` commit, verifies the source payload and installs into a new version directory. It switches a small managed pointer and keeps earlier versions and pointer backups. User settings live outside the CLI directory and are not rewritten.
 
-There is no tagged public CLI release in the current source state. The branch snapshot is used until an approved release/tag policy is established. `0.1.0-dev` identifies this local preparation build; it does not assert a published release.
+The public bootstrap and current `main` CLI have been verified with a clean generated project. The working tree is prepared for application/CLI `1.0.0`, but there is no `v1.0.0` tag or stable application release yet. A branch snapshot is installable but is not a formal tagged release.
+
+## Semantic Versioning
+
+Use Semantic Versioning for the Laravel Master Core application and global CLI:
+
+- `v1.0.0` — initial stable release.
+- `v1.0.1` — backward-compatible bug fixes.
+- `v1.1.0` — backward-compatible features.
+- `v2.0.0` — breaking changes.
+
+Store the bare `1.0.0` form in root `VERSION`; use the `v` prefix only on Git tags. Keep `CHANGELOG.md` under `Unreleased` until an approved publication date is set. The current local `VERSION=1.0.0` is release preparation only. Do not create a tag or publish without explicit authorization.
+
+The ten npm workspaces have their own independent package versions and are publicly available at `0.1.0`. Do not republish or change those versions for the application/CLI `v1.0.0` release. The 12 Composer package sources stay inside the monorepo and resolve by relative path; do not submit them to Packagist for the supported global project-generation flow.
 
 ## Core host project updates
 
@@ -15,7 +28,7 @@ There is no tagged public CLI release in the current source state. The branch sn
 1. Run `master status`, `master changes`, and `master publish --dry-run`.
 2. Review exact included and blocked files, secret-scan results, tests, changelog and compatibility docs.
 3. With explicit publication approval, run `master publish`, select paths individually, enter a commit message, and confirm `STAGE`, `COMMIT`, and `PUSH` separately.
-4. Verify the published GitHub `main` hash and installer/CLI files.
-5. Create a version tag only under an approved release process; update `VERSION` and changelog before the tag.
+4. Verify the GitHub `main` hash and installer/CLI files. The bootstrap and CLI are currently available on the existing public `main` branch.
+5. Under explicit release approval, validate `VERSION` is the requested bare SemVer value, finish the matching changelog entry, then create the corresponding `vMAJOR.MINOR.PATCH` tag. Do not tag this prepared candidate before approval.
 
-This campaign did not commit, push, tag, or deploy. The bootstrap URL becomes usable only after `install.ps1` and the CLI source are pushed to the approved public branch.
+The 2026-11-19 acceptance verification did not commit, push, tag, or deploy. The public bootstrap URL is `https://raw.githubusercontent.com/Itassistancebd/laravel-master-core/main/install.ps1`.

@@ -1,6 +1,10 @@
 # Contributing to Laravel Master Core
 
-Keep the existing GitHub monorepo as the source of truth. Do not publish npm or Composer packages, create package repositories, deploy, or change live databases as part of routine development.
+Keep the existing GitHub monorepo as the source of truth. Routine development must not publish npm or Composer packages, create package repositories, deploy, or change live databases. The ten npm packages are already published at `0.1.0`; do not republish them or change their versions during application releases. Composer packages stay in the monorepo and are not submitted to Packagist.
+
+## Version policy
+
+The application and global CLI follow Semantic Versioning. Set `VERSION` to the bare version and use a `v`-prefixed Git tag: `1.0.0` / `v1.0.0` is the initial stable release, `v1.0.1` is a bug-fix release, `v1.1.0` adds backward-compatible features, and `v2.0.0` contains breaking changes. The current local candidate is `1.0.0`; it is not released until separately authorized, reviewed, tagged, and published. Keep package versions independent from the application version.
 
 ## Start here
 
@@ -25,10 +29,10 @@ master publish --dry-run
 
 ## Publish source changes
 
-The interactive `master publish` workflow checks the existing `origin` URL, branch, remote state and changed files. It asks you to enter exact paths, then separately asks for `STAGE`, `COMMIT`, and `PUSH`. It stages only selected paths and uses a normal push to `origin/main`. Cancel at any prompt to stop; selected staged work is preserved. Review the GitHub result and update the changelog/version documentation as part of the release.
+The interactive `master publish` workflow checks the existing `origin` URL, branch, remote state and changed files. It asks you to enter exact paths, then separately asks for `STAGE`, `COMMIT`, and `PUSH`. It stages only selected paths and uses a normal push to `origin/main`. Cancel at any prompt to stop; selected staged work is preserved. For an authorized release, update `VERSION`, changelog, and release notes consistently before committing. Create the `vMAJOR.MINOR.PATCH` tag only after explicit approval. Do not run npm publication for the already published `0.1.0` packages as part of this application release.
 
 This task does not authorize committing or pushing changes. Obtain explicit approval for a specific publication action before using the final command.
 
 ## Project generation and release status
 
-The global bootstrap is implemented locally but still requires publication to `main` before fresh computers can install it. `master new` copies this existing Laravel application from the canonical repository archive and delegates to the Phase 11 monorepo-template installer. Internal Core packages resolve from the included relative Composer paths and local npm workspaces; third-party dependencies resolve from the normal registries. Categories is not included. Generation does not run migrations or seeders.
+The public global bootstrap and `master new` flow were verified on 2026-11-19. Generation copies this existing Laravel application from the canonical repository archive and delegates to the Phase 11 monorepo-template installer. Internal Core packages resolve from the included relative Composer paths and local npm workspaces; third-party dependencies resolve from the normal registries. Categories is excluded and the Dashboard remains. Generation does not run migrations or seeders. See the [acceptance record](docs/development/github-distribution.md).

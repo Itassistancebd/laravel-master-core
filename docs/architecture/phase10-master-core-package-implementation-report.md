@@ -2,7 +2,7 @@
 
 # Phase 10 — Master Core Package Implementation Report
 
-**Status: IMPLEMENTED LOCALLY; DISTRIBUTION ACCEPTANCE PARTIAL**
+**Historical status as of 2026-11-15: IMPLEMENTED LOCALLY; DISTRIBUTION ACCEPTANCE PARTIAL.** Current global monorepo delivery and release state are recorded in the [Phase 10/11 integrated report](phase10-11-integrated-distribution.md).
 **Date:** 2026-11-15
 
 ## Summary

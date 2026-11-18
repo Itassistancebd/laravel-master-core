@@ -325,6 +325,11 @@ final class ProjectGeneratorTest extends TestCase
         self::assertFileExists($target.'/packages/tools/project-generator/composer.json');
         self::assertFileExists($target.'/.env.example');
         self::assertFileExists($target.'/.env');
+        self::assertFileExists($source.'/database/migrations/2026_11_17_000000_create_categories_table.php');
+        self::assertFileDoesNotExist($target.'/database/migrations/2026_11_17_000000_create_categories_table.php');
+        self::assertFileExists($target.'/app/Http/Controllers/DashboardController.php');
+        self::assertFileExists($target.'/resources/js/admin/DashboardPage.vue');
+        self::assertFileExists($target.'/packages/core/user-management/composer.json');
         self::assertFileDoesNotExist($target.'/.php-runtime.local.json');
         self::assertDirectoryDoesNotExist($target.'/.git');
         self::assertDirectoryDoesNotExist($target.'/vendor');

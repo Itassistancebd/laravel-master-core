@@ -1,8 +1,8 @@
-> Final identity verification: the generator profile and local npm workspaces consistently use `@itassistance-bd`; Composer dependencies remain the unchanged `example/...` identities. The focused suite passes 20 tests / 52 assertions. External trusted registries and a real generated consumer remain unverified; see the [identity migration report](phase10-package-identity-migration-record.md).
+> Historical 2026-11-16 status: generator profile and npm workspaces used `@itassistance-bd`; Composer dependencies retained `example/...` identities. The focused suite passed 20 tests / 52 assertions. The public GitHub generation acceptance added on 2026-11-19 supersedes the generated-host limitation below; registry-based feature-selection mode remains separate.
 
 # Phase 11 Project Generator — Implementation Report
 
-**Status: LOCALLY IMPLEMENTED; GENERATED-HOST ACCEPTANCE PARTIAL**
+**Historical status as of 2026-11-18: LOCALLY IMPLEMENTED; GENERATED-HOST ACCEPTANCE PARTIAL.** See the public GitHub acceptance update at the end of this report.
 **Date:** 2026-11-16
 **Specification:** [Phase 11 Project Generator proposal](phase11-project-generator-proposal.md)
 
@@ -137,7 +137,6 @@ The local workspace npm scope and generator profile consistently use `@itassista
 
 ## Master release campaign verification update - 2026-11-18
 
-The current local release evidence supersedes older ZIP and local-consumer limitations in this report. The existing XAMPP2 PHP 8.4.27 `php_zip.dll` loads as Zip 1.22.8 / Libzip 1.12 when requested by the ignored project runtime configuration. The project PHP/Composer wrapper and Playwright PHP invocations now apply that option without modifying php.ini or global PATH. A clean Composer consumer with all twelve local snapshots resolved third-party packages from Packagist using `--prefer-dist`, extracted 96 archives, and produced autoload files. This validates ZIP extraction for local snapshots plus public third-party archives only.
 
 The npm owner account and team membership were rechecked; account 2FA mode is `auth-and-writes`. Organization-wide 2FA enforcement remains unverified. All ten public npm package endpoints return 404. The Packagist public vendor listing returned zero packages and the candidate package endpoint returned 404; neither result proves authenticated vendor ownership or maintainer access.
 
@@ -145,4 +144,10 @@ The full PHP suite passed 200 tests / 991 assertions, including 22 Generator tes
 
 The browser runner was made fail-closed for isolated runs: it checks SQLite connection, exact unique temp DB path, blank DB_URL, regular non-symlink DB file, and run-specific cache paths before invoking migration. Responsive Chromium passed 5/5 tests and the full suite passed 8/8, with 155 and 171 PNG screenshots respectively. No configured MySQL database or live roles were used. See the Phase 12 report for artifact paths and checks.
 
-Phase 11 remains **PARTIAL** while the candidate Composer vendor and trusted external package sources are unverified/unpublished. No packages, repositories, commits, or pushes were created.
+This section records the 2026-11-18 state and is superseded for the global monorepo generator by the current acceptance below.
+
+## Public global generator and release version update - 2026-11-19
+
+The public bootstrap and `master new example-app` were run successfully from a clean temporary Windows directory using public commit `8d8bb29da811ccfe86b60eee9a2f2a8f23c31f66`. The generated project used all 12 Composer path repositories and ten npm workspaces, retained the Dashboard, excluded Categories, generated `.env` and `APP_KEY`, passed Composer/Artisan/package discovery and frontend build, and did not run migrations or seeders. See the [GitHub distribution acceptance record](../development/github-distribution.md).
+
+All ten npm packages are publicly published at `0.1.0`. The root application/CLI version is prepared locally as `1.0.0`, with proposed tag `v1.0.0`; it remains unpublished pending authorization. Composer package publication to Packagist is not required for the monorepo-backed workflow.
