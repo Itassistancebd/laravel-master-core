@@ -133,12 +133,25 @@ final class Identity
         }
         if (preg_match('/^GRANT\s+(.+?)\s+ON\s+`([^`]+)`\s*\.\s*\*\s+TO\s+`[^`]+`\s*@\s*`([^`]+)`(?:\s+WITH\s+GRANT\s+OPTION)?$/iD', $normalized, $m)) {
             $statement = strcasecmp(trim($m[1]), 'ALL PRIVILEGES') === 0 ? 'schema_all_privileges' : 'other';
-            return [$statement, strcasecmp($m[2], $schema) === 0 ? 'job_schema' : 'other_schema', $m[3] === '%' ? 'wildcard' : 'other'];
+            $grantSchema = self::decodeGrantSchemaIdentifier($m[2]);
+            $scope = $grantSchema === null ? 'unknown' : (strcasecmp($grantSchema, $schema) === 0 ? 'job_schema' : 'other_schema');
+            return [$statement, $scope, $m[3] === '%' ? 'wildcard' : 'other'];
         }
         if (preg_match('/^GRANT\s+.+?\s+ON\s+\*\s*\.\s*\*\s+TO\s+`[^`]+`\s*@\s*`([^`]+)`(?:\s+WITH\s+GRANT\s+OPTION)?$/iD', $normalized, $m)) {
             return ['global_privilege', 'global', $m[1] === '%' ? 'wildcard' : 'other'];
         }
         return ['unparseable', 'unknown', 'unknown'];
+    }
+
+    /** Decode only MySQL's documented escaped underscore in database-level GRANT identifiers. */
+    private static function decodeGrantSchemaIdentifier(string $identifier): ?string
+    {
+        if (!str_contains($identifier, '\\')) {
+            return $identifier;
+        }
+
+        $decoded = str_replace('\\_', '_', $identifier);
+        return str_contains($decoded, '\\') ? null : $decoded;
     }
 
     /** @return array<string, mixed> */
@@ -617,7 +630,8 @@ final class Identity
             }
 
             if (preg_match('/^GRANT\s+ALL\s+PRIVILEGES\s+ON\s+`([^`]+)`\s*\.\s*\*\s+TO\s+`([^`]+)`\s*@\s*`([^`]+)`$/iD', $normalizedGrant, $matches)) {
-                if (strcasecmp($matches[1], $schema) !== 0) {
+                $grantSchema = self::decodeGrantSchemaIdentifier($matches[1]);
+                if ($grantSchema === null || strcasecmp($grantSchema, $schema) !== 0) {
                     self::rejectGrant('wrong_schema', $statementCategory, $scopeCategory, $hostCategory);
                 }
                 if (strcasecmp($matches[2], $expectedUser) !== 0) {
@@ -723,6 +737,8 @@ final class Identity
             'duplicate global USAGE grant rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `p07_123456_2_p84`.* TO `p07_123456_2_p84`@`%`'], false, 'grant_scope_invalid'],
             'global USAGE for unexpected account host rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`localhost`', 'GRANT ALL PRIVILEGES ON `p07_123456_2_p84`.* TO `p07_123456_2_p84`@`%`'], false, 'grant_scope_invalid'],
             'schema grant for deceptive account host rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `p07_123456_2_p84`.* TO `p07_123456_2_p84`@`localhost.github.com`'], false, 'grant_scope_invalid'],
+            'MySQL escaped underscores in job schema accepted' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `p07\\_123456\\_2\\_p84`.* TO `p07_123456_2_p84`@`%`'], true, null],
+            'unrecognized schema escape rejected' => [['GRANT ALL PRIVILEGES ON `p07\\q123456_2_p84`.* TO `p07_123456_2_p84`@`%`'], false, 'grant_scope_invalid'],
         ];
         foreach ($grantCases as $name => [$grants, $shouldPass, $expectedCode]) {
             $actualCode = null;
@@ -772,6 +788,17 @@ final class Identity
                 'actual' => $actualDetails === $expectedDetails ? 'safe classification returned' : 'classification mismatch',
             ];
         }
+
+        $escapedGrantClassification = self::classifyGrant(
+            'GRANT ALL PRIVILEGES ON `p07\\_123456\\_2\\_p84`.* TO `p07_123456_2_p84`@`%`',
+            'p07_123456_2_p84'
+        );
+        $checks[] = [
+            'name' => 'escaped job-schema grant is classified as the job schema',
+            'status' => $escapedGrantClassification === ['schema_all_privileges', 'job_schema', 'wildcard'] ? 'PASS' : 'FAIL',
+            'expected' => 'schema_all_privileges / job_schema / wildcard',
+            'actual' => implode(' / ', $escapedGrantClassification),
+        ];
 
         $casingFixtures = [];
         foreach (['lowercase', 'uppercase', 'mixed-case'] as $case) {
