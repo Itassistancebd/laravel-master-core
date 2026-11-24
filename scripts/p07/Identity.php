@@ -26,14 +26,17 @@ final class PreflightDiagnosticException extends RuntimeException
     ];
 
     public readonly string $diagnosticCode;
+    /** @var array<string, string> */
+    public readonly array $safeDetails;
 
-    public function __construct(string $diagnosticCode)
+    public function __construct(string $diagnosticCode, array $safeDetails = [])
     {
         $this->diagnosticCode = in_array($diagnosticCode, self::CODES, true)
             ? $diagnosticCode
             : 'preflight_unexpected_error';
 
         parent::__construct('P-07 preflight gate failed.');
+        $this->safeDetails = $safeDetails;
     }
 }
 
@@ -83,7 +86,59 @@ final class Identity
             $classification['driver_code'] = isset($info[1]) && is_numeric($info[1]) ? (int) $info[1] : null;
         }
 
+        if ($error instanceof PreflightDiagnosticException && $error->diagnosticCode === 'grant_scope_invalid') {
+            $classification['grant_diagnostic'] = self::sanitizeGrantDiagnostic($error->safeDetails);
+        }
+
         return $classification;
+    }
+
+    /** @param array<string, mixed> $details @return array<string, string> */
+    private static function sanitizeGrantDiagnostic(array $details): array
+    {
+        $allowed = [
+            'statement_category' => ['global_usage', 'schema_all_privileges', 'global_privilege', 'other', 'unparseable', 'none'],
+            'scope_category' => ['global', 'job_schema', 'other_schema', 'other', 'unknown', 'none'],
+            'account_host_category' => ['wildcard', 'other', 'unknown', 'not_applicable'],
+            'rejection_reason' => ['empty_grant_list', 'invalid_statement', 'grant_option_present', 'wrong_grantee', 'wrong_host', 'duplicate_global_usage', 'wrong_schema', 'duplicate_schema_grant', 'unexpected_grant_form', 'missing_schema_grant'],
+        ];
+        $safe = [];
+        foreach ($allowed as $field => $values) {
+            $value = $details[$field] ?? null;
+            $safe[$field] = is_string($value) && in_array($value, $values, true) ? $value : 'unknown';
+        }
+        return $safe;
+    }
+
+    /** @return never */
+    private static function rejectGrant(string $reason, string $statement, string $scope, string $host): never
+    {
+        throw new PreflightDiagnosticException('grant_scope_invalid', [
+            'statement_category' => $statement,
+            'scope_category' => $scope,
+            'account_host_category' => $host,
+            'rejection_reason' => $reason,
+        ]);
+    }
+
+    /** @return array{0: string, 1: string, 2: string} */
+    private static function classifyGrant(string $grant, string $schema): array
+    {
+        $normalized = preg_replace('/\s+/', ' ', trim($grant));
+        if (!is_string($normalized) || $normalized === '') {
+            return ['unparseable', 'unknown', 'unknown'];
+        }
+        if (preg_match('/^GRANT\s+USAGE\s+ON\s+\*\s*\.\s*\*\s+TO\s+`[^`]+`\s*@\s*`([^`]+)`(?:\s+WITH\s+GRANT\s+OPTION)?$/iD', $normalized, $m)) {
+            return ['global_usage', 'global', $m[1] === '%' ? 'wildcard' : 'other'];
+        }
+        if (preg_match('/^GRANT\s+(.+?)\s+ON\s+`([^`]+)`\s*\.\s*\*\s+TO\s+`[^`]+`\s*@\s*`([^`]+)`(?:\s+WITH\s+GRANT\s+OPTION)?$/iD', $normalized, $m)) {
+            $statement = strcasecmp(trim($m[1]), 'ALL PRIVILEGES') === 0 ? 'schema_all_privileges' : 'other';
+            return [$statement, strcasecmp($m[2], $schema) === 0 ? 'job_schema' : 'other_schema', $m[3] === '%' ? 'wildcard' : 'other'];
+        }
+        if (preg_match('/^GRANT\s+.+?\s+ON\s+\*\s*\.\s*\*\s+TO\s+`[^`]+`\s*@\s*`([^`]+)`(?:\s+WITH\s+GRANT\s+OPTION)?$/iD', $normalized, $m)) {
+            return ['global_privilege', 'global', $m[1] === '%' ? 'wildcard' : 'other'];
+        }
+        return ['unparseable', 'unknown', 'unknown'];
     }
 
     /** @return array<string, mixed> */
@@ -302,6 +357,9 @@ final class Identity
         }
         if (is_int($error['driver_code'] ?? null)) {
             $safe['driver_code'] = $error['driver_code'];
+        }
+        if (is_array($error['grant_diagnostic'] ?? null)) {
+            $safe['grant_diagnostic'] = self::sanitizeGrantDiagnostic($error['grant_diagnostic']);
         }
         return $safe;
     }
@@ -523,46 +581,63 @@ final class Identity
     public static function assertSchemaScopedGrants(array $grants, string $schema, string $expectedUser): void
     {
         if ($grants === []) {
-            throw new PreflightDiagnosticException('grant_scope_invalid');
+            self::rejectGrant('empty_grant_list', 'none', 'none', 'not_applicable');
         }
 
         $schemaGrant = false;
         $globalUsageGrant = false;
         foreach ($grants as $grant) {
             if (!is_string($grant)) {
-                throw new PreflightDiagnosticException('grant_scope_invalid');
+                self::rejectGrant('invalid_statement', 'unparseable', 'unknown', 'unknown');
             }
 
             $normalizedGrant = preg_replace('/\s+/', ' ', trim($grant));
             if (!is_string($normalizedGrant) || $normalizedGrant === '') {
-                throw new PreflightDiagnosticException('grant_scope_invalid');
+                self::rejectGrant('invalid_statement', 'unparseable', 'unknown', 'unknown');
+            }
+
+            [$statementCategory, $scopeCategory, $hostCategory] = self::classifyGrant($normalizedGrant, $schema);
+            if (preg_match('/\s+WITH\s+GRANT\s+OPTION$/iD', $normalizedGrant)) {
+                self::rejectGrant('grant_option_present', $statementCategory, $scopeCategory, $hostCategory);
             }
 
             if (preg_match('/^GRANT\s+USAGE\s+ON\s+\*\s*\.\s*\*\s+TO\s+`([^`]+)`\s*@\s*`([^`]+)`$/iD', $normalizedGrant, $matches)) {
-                if (strcasecmp($matches[1], $expectedUser) !== 0
-                    || $matches[2] !== self::EXPECTED_DATABASE_ACCOUNT_HOST
-                    || $globalUsageGrant) {
-                    throw new PreflightDiagnosticException('grant_scope_invalid');
+                if (strcasecmp($matches[1], $expectedUser) !== 0) {
+                    self::rejectGrant('wrong_grantee', $statementCategory, $scopeCategory, $hostCategory);
+                }
+                if ($matches[2] !== self::EXPECTED_DATABASE_ACCOUNT_HOST) {
+                    self::rejectGrant('wrong_host', $statementCategory, $scopeCategory, $hostCategory);
+                }
+                if ($globalUsageGrant) {
+                    self::rejectGrant('duplicate_global_usage', $statementCategory, $scopeCategory, $hostCategory);
                 }
 
                 $globalUsageGrant = true;
                 continue;
             }
 
-            if (preg_match('/^GRANT\s+ALL\s+PRIVILEGES\s+ON\s+`([^`]+)`\s*\.\s*\*\s+TO\s+`([^`]+)`\s*@\s*`([^`]+)`$/iD', $normalizedGrant, $matches)
-                && strcasecmp($matches[1], $schema) === 0
-                && strcasecmp($matches[2], $expectedUser) === 0
-                && $matches[3] === self::EXPECTED_DATABASE_ACCOUNT_HOST
-                && !$schemaGrant) {
+            if (preg_match('/^GRANT\s+ALL\s+PRIVILEGES\s+ON\s+`([^`]+)`\s*\.\s*\*\s+TO\s+`([^`]+)`\s*@\s*`([^`]+)`$/iD', $normalizedGrant, $matches)) {
+                if (strcasecmp($matches[1], $schema) !== 0) {
+                    self::rejectGrant('wrong_schema', $statementCategory, $scopeCategory, $hostCategory);
+                }
+                if (strcasecmp($matches[2], $expectedUser) !== 0) {
+                    self::rejectGrant('wrong_grantee', $statementCategory, $scopeCategory, $hostCategory);
+                }
+                if ($matches[3] !== self::EXPECTED_DATABASE_ACCOUNT_HOST) {
+                    self::rejectGrant('wrong_host', $statementCategory, $scopeCategory, $hostCategory);
+                }
+                if ($schemaGrant) {
+                    self::rejectGrant('duplicate_schema_grant', $statementCategory, $scopeCategory, $hostCategory);
+                }
                 $schemaGrant = true;
                 continue;
             }
 
-            throw new PreflightDiagnosticException('grant_scope_invalid');
+            self::rejectGrant('unexpected_grant_form', $statementCategory, $scopeCategory, $hostCategory);
         }
 
         if (!$schemaGrant) {
-            throw new PreflightDiagnosticException('grant_scope_invalid');
+            self::rejectGrant('missing_schema_grant', 'none', 'none', 'not_applicable');
         }
     }
 
@@ -666,6 +741,35 @@ final class Identity
                 'status' => $passed === $shouldPass && $actualCode === $expectedCode ? 'PASS' : 'FAIL',
                 'expected' => $shouldPass ? 'accept the exact job-schema grant' : 'reject the noncompliant grant set',
                 'actual' => $passed ? 'accepted' : 'rejected with ' . $actualCode,
+            ];
+        }
+
+        $diagnosticCases = [
+            'wrong schema grant has allow-listed diagnostic' => [
+                ['GRANT ALL PRIVILEGES ON `private_schema_name`.* TO `private_user_name`@`%`'],
+                ['statement_category' => 'schema_all_privileges', 'scope_category' => 'other_schema', 'account_host_category' => 'wildcard', 'rejection_reason' => 'wrong_schema'],
+            ],
+            'grant option diagnostic omits grant text and identifiers' => [
+                ['GRANT ALL PRIVILEGES ON `private_schema_name`.* TO `private_user_name`@`localhost` WITH GRANT OPTION'],
+                ['statement_category' => 'schema_all_privileges', 'scope_category' => 'other_schema', 'account_host_category' => 'other', 'rejection_reason' => 'grant_option_present'],
+            ],
+        ];
+        foreach ($diagnosticCases as $name => [$diagnosticGrants, $expectedDetails]) {
+            try {
+                self::assertSchemaScopedGrants($diagnosticGrants, 'p07_123456_2_p84', 'p07_123456_2_p84');
+                $diagnostic = [];
+            } catch (PreflightDiagnosticException $error) {
+                $diagnostic = self::safeError($error, 'database_identity');
+            }
+            $actualDetails = $diagnostic['grant_diagnostic'] ?? [];
+            $serializedDiagnostic = json_encode($diagnostic, JSON_UNESCAPED_SLASHES) ?: '';
+            $checks[] = [
+                'name' => $name,
+                'status' => ($actualDetails === $expectedDetails
+                    && !str_contains($serializedDiagnostic, 'private_schema_name')
+                    && !str_contains($serializedDiagnostic, 'private_user_name')) ? 'PASS' : 'FAIL',
+                'expected' => 'fixed grant categories and reason only; no identifiers or statement text',
+                'actual' => $actualDetails === $expectedDetails ? 'safe classification returned' : 'classification mismatch',
             ];
         }
 

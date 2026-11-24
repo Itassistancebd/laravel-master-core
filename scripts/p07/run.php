@@ -109,7 +109,7 @@ function markdownReport(array $report): string
     $lines[] = '- Harness policy checks: **' . $report['policy_checks_status'] . '**';
     if (isset($report['preflight']['error_classification'])) {
         $error = $report['preflight']['error_classification'];
-        $safeError = array_intersect_key($error, array_flip(['code', 'gate', 'class', 'sqlstate', 'driver_code']));
+        $safeError = array_intersect_key($error, array_flip(['code', 'gate', 'class', 'sqlstate', 'driver_code', 'grant_diagnostic']));
         if (isset($safeError['code'])) {
             $lines[] = '- Preflight diagnostic: `' . $safeError['code'] . '` at gate `' . ($safeError['gate'] ?? 'unknown') . '`';
         }
