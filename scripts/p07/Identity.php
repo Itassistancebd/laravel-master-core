@@ -179,12 +179,13 @@ final class Identity
 
         $schemaGrant = false;
         foreach ($grants as $grant) {
-            $normalized = strtoupper($grant);
-            if (preg_match('/^GRANT USAGE ON \*\.\* TO /', $normalized)) {
+            if (preg_match('/^GRANT USAGE ON \*\.\* TO /i', $grant)) {
                 continue;
             }
 
-            if (preg_match('/^GRANT ALL PRIVILEGES ON `' . preg_quote(strtoupper($schema), '/') . '`\.\* TO /', $normalized) && !str_contains($normalized, 'GRANT OPTION')) {
+            if (preg_match('/^GRANT ALL PRIVILEGES ON `([^`]+)`\.\* TO /i', $grant, $matches)
+                && strcasecmp($matches[1], $schema) === 0
+                && !preg_match('/\bGRANT OPTION\b/i', $grant)) {
                 $schemaGrant = true;
                 continue;
             }
@@ -246,9 +247,12 @@ final class Identity
         }
 
         $grantCases = [
-            'schema-only grants accepted' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `P07_123456_2_P84`.* TO `p07_123456_2_p84`@`%`'], true],
-            'global grants rejected' => [['GRANT ALL PRIVILEGES ON *.* TO `p07_123456_2_p84`@`%`'], false],
-            'grants outside job schema rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `other_schema`.* TO `p07_123456_2_p84`@`%`'], false],
+            'lowercase job-schema grant accepted' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `p07_123456_2_p84`.* TO `p07_123456_2_p84`@`%`'], true],
+            'uppercase job-schema grant accepted' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `P07_123456_2_P84`.* TO `p07_123456_2_p84`@`%`'], true],
+            'mixed-case job-schema grant accepted' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `P07_123456_2_p84`.* TO `p07_123456_2_p84`@`%`'], true],
+            'wrong job-schema grant rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `other_schema`.* TO `p07_123456_2_p84`@`%`'], false],
+            'global privilege grant rejected' => [['GRANT ALL PRIVILEGES ON *.* TO `p07_123456_2_p84`@`%`'], false],
+            'missing job-schema grant rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`'], false],
             'grant option rejected' => [['GRANT USAGE ON *.* TO `p07_123456_2_p84`@`%`', 'GRANT ALL PRIVILEGES ON `P07_123456_2_P84`.* TO `p07_123456_2_p84`@`%` WITH GRANT OPTION'], false],
         ];
         foreach ($grantCases as $name => [$grants, $shouldPass]) {
@@ -261,7 +265,7 @@ final class Identity
             $checks[] = [
                 'name' => $name,
                 'status' => $passed === $shouldPass ? 'PASS' : 'FAIL',
-                'expected' => $shouldPass ? 'accept job-schema-only privileges' : 'reject global privileges',
+                'expected' => $shouldPass ? 'accept the exact job-schema grant' : 'reject the noncompliant grant set',
                 'actual' => $passed ? 'accepted' : 'rejected',
             ];
         }
@@ -284,7 +288,7 @@ final class Identity
         ];
         foreach ($observedCases as $name => [$row, $driver, $shouldPass]) {
             try {
-                self::assertObservedIdentity($row, $driver, $config, $grantCases['schema-only grants accepted'][0]);
+                self::assertObservedIdentity($row, $driver, $config, $grantCases['lowercase job-schema grant accepted'][0]);
                 $passed = true;
             } catch (RuntimeException) {
                 $passed = false;
