@@ -13,8 +13,8 @@ concurrency:
 jobs:
   qualify:
     name: PHP ${{ matrix.php }} / MySQL 8.4.13
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -47,13 +47,24 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
-      - name: Install exact PHP matrix runtime
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: pdo_mysql
-          tools: none
-          coverage: none
+      - name: Install PHP source build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes \
+            bison \
+            build-essential \
+            libcurl4-openssl-dev \
+            libonig-dev \
+            libssl-dev \
+            libxml2-dev \
+            pkg-config \
+            re2c \
+            zlib1g-dev
+
+      - name: Build and verify exact PHP matrix runtime
+        env:
+          P07_BUILD_PHP_VERSION: ${{ matrix.php }}
+        run: bash scripts/p07/build-php.sh "$P07_BUILD_PHP_VERSION"
 
       - name: Run standalone probes after identity policy checks and database preflight
         shell: bash

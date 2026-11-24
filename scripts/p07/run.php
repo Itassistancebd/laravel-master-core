@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 use P07\Identity;
+use P07\PreflightDiagnosticException;
 use P07\ProbeSuite;
-require __DIR__ . '/Identity.php';
-require __DIR__ . '/ProbeSuite.php';
+require_once __DIR__ . '/Identity.php';
+require_once __DIR__ . '/ProbeSuite.php';
 
 const PROBE_NAMES = [
     'check_constraint_enforcement',
@@ -36,39 +37,42 @@ function lockedLaravelVersion(): ?string
     return null;
 }
 
-function safeError(Throwable $error): array
+function safeError(Throwable $error, string $gate): array
 {
-    if ($error instanceof PDOException) {
-        $info = is_array($error->errorInfo ?? null) ? $error->errorInfo : [];
-        return [
-            'class' => 'database_connection_or_identity_error',
-            'sqlstate' => isset($info[0]) ? (string) $info[0] : (string) $error->getCode(),
-            'driver_code' => isset($info[1]) ? (int) $info[1] : null,
-        ];
-    }
-    return ['class' => 'configuration_or_identity_preflight_error'];
+    return Identity::safeError($error, $gate);
 }
 
 function writeReports(array $report, string $outputDirectory): array
 {
     if ($outputDirectory !== 'artifacts/p07') {
-        throw new RuntimeException('Evidence output directory does not match the fixed artifact path.');
+        throw new PreflightDiagnosticException('artifact_output_invalid');
     }
     $root = dirname(__DIR__, 2);
     $directory = $root . DIRECTORY_SEPARATOR . 'artifacts' . DIRECTORY_SEPARATOR . 'p07';
     if (!is_dir($directory) && !mkdir($directory, 0770, true) && !is_dir($directory)) {
-        throw new RuntimeException('Evidence output directory could not be created.');
+        throw new PreflightDiagnosticException('artifact_output_invalid');
     }
 
-    $phpSlug = preg_replace('/[^0-9]/', '', (string) $report['runtime']['php_version']);
-    $base = sprintf('p07-%s-%s-php%s', $report['ci']['run_id'], $report['ci']['run_attempt'], $phpSlug);
+    $payloads = serializeReportPayloads($report);
+    $safeReport = Identity::sanitizeEvidenceReport($report);
+    $phpSlug = preg_replace('/[^0-9]/', '', (string) $safeReport['runtime']['php_version']);
+    $base = sprintf('p07-%s-%s-php%s', $safeReport['ci']['run_id'], $safeReport['ci']['run_attempt'], $phpSlug);
     $jsonPath = $directory . DIRECTORY_SEPARATOR . $base . '.json';
     $markdownPath = $directory . DIRECTORY_SEPARATOR . $base . '.md';
-    $json = json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL;
-    if (file_put_contents($jsonPath, $json, LOCK_EX) === false || file_put_contents($markdownPath, markdownReport($report), LOCK_EX) === false) {
-        throw new RuntimeException('Evidence report could not be written.');
+    if (file_put_contents($jsonPath, $payloads['json'], LOCK_EX) === false || file_put_contents($markdownPath, $payloads['markdown'], LOCK_EX) === false) {
+        throw new PreflightDiagnosticException('artifact_output_invalid');
     }
     return ['json' => $jsonPath, 'markdown' => $markdownPath];
+}
+
+/** @return array{json: string, markdown: string} */
+function serializeReportPayloads(array $report): array
+{
+    $safeReport = Identity::sanitizeEvidenceReport($report);
+    return [
+        'json' => json_encode($safeReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL,
+        'markdown' => markdownReport($safeReport),
+    ];
 }
 
 function markdownReport(array $report): string
@@ -79,8 +83,8 @@ function markdownReport(array $report): string
         '- Overall run result: **' . $report['overall_result'] . '**',
         '- P-07 status: **PENDING** until owner review and acceptance.',
         '- Qualification target: Oracle MySQL Community Server 8.4.13 LTS; Laravel 12.x; PHP ' . $report['runtime']['php_version'] . '; PDO_MYSQL.',
-        '- CI run: `' . $report['ci']['run_id'] . '` / attempt `' . $report['ci']['run_attempt'] . '`; runner `' . $report['ci']['runner_name'] . '`.',
-        '- Runner environment: `' . $report['ci']['runner_environment'] . '`.',
+        '- CI run: `' . $report['ci']['run_id'] . '` / attempt `' . $report['ci']['run_attempt'] . '`; host `' . $report['ci']['github_host'] . '`.',
+        '- Runner class: `' . $report['ci']['runner_environment'] . '`.',
         '- Started/reported at UTC: `' . $report['generated_at_utc'] . '`.',
         '',
         '## Environment identity',
@@ -104,7 +108,12 @@ function markdownReport(array $report): string
     $lines[] = '- Database preflight: **' . $report['preflight']['status'] . '**';
     $lines[] = '- Harness policy checks: **' . $report['policy_checks_status'] . '**';
     if (isset($report['preflight']['error_classification'])) {
-        $lines[] = '- Preflight error: `' . json_encode($report['preflight']['error_classification'], JSON_UNESCAPED_SLASHES) . '`';
+        $error = $report['preflight']['error_classification'];
+        $safeError = array_intersect_key($error, array_flip(['code', 'gate', 'class', 'sqlstate', 'driver_code']));
+        if (isset($safeError['code'])) {
+            $lines[] = '- Preflight diagnostic: `' . $safeError['code'] . '` at gate `' . ($safeError['gate'] ?? 'unknown') . '`';
+        }
+        $lines[] = '- Preflight error classification: `' . json_encode($safeError, JSON_UNESCAPED_SLASHES) . '`';
     }
     $lines[] = '';
     $lines[] = '## Probe inventory';
@@ -126,8 +135,9 @@ function markdownReport(array $report): string
     return implode(PHP_EOL, $lines);
 }
 
+if (!defined('P07_REPORT_LIBRARY_ONLY')) {
 $repositoryRoot = dirname(__DIR__, 2);
-    $initialEnv = getenv();
+$initialEnv = getenv();
 $outputDirectory = 'artifacts/p07';
 $policyChecks = Identity::selfChecks();
 $policyFailed = count(array_filter($policyChecks, static fn (array $check): bool => $check['status'] !== 'PASS')) > 0;
@@ -146,18 +156,15 @@ $report = [
         'provider' => 'GitHub Actions',
         'run_id' => preg_match('/^\d+$/', (string) ($initialEnv['GITHUB_RUN_ID'] ?? '')) ? (string) $initialEnv['GITHUB_RUN_ID'] : 'unavailable',
         'run_attempt' => preg_match('/^\d+$/', (string) ($initialEnv['GITHUB_RUN_ATTEMPT'] ?? '')) ? (string) $initialEnv['GITHUB_RUN_ATTEMPT'] : 'unavailable',
-        'workflow' => (string) ($initialEnv['GITHUB_WORKFLOW'] ?? 'unavailable'),
-        'runner_name' => (string) ($initialEnv['RUNNER_NAME'] ?? 'unavailable'),
-        'runner_environment' => (string) ($initialEnv['RUNNER_ENVIRONMENT'] ?? 'unavailable'),
-        'runner_os' => (string) PHP_OS_FAMILY,
-        'runner_image_os' => (string) ($initialEnv['ImageOS'] ?? 'unavailable'),
-        'runner_image_version' => (string) ($initialEnv['ImageVersion'] ?? 'unavailable'),
+        'workflow' => 'P-07 isolated MySQL evidence',
+        'github_host' => 'github.com',
+        'runner_environment' => 'github-hosted',
     ],
     'runtime' => [
         'php_version' => PHP_VERSION,
         'php_int_size_bytes' => PHP_INT_SIZE,
         'php_int_bits' => PHP_INT_SIZE * 8,
-        'operating_system' => php_uname(),
+        'operating_system' => PHP_OS_FAMILY,
         'laravel_locked_version' => lockedLaravelVersion(),
     ],
     'preflight' => ['status' => 'NOT RUN'],
@@ -180,29 +187,33 @@ foreach (PROBE_NAMES as $name) {
 }
 
 $pdo = null;
+$preflightGate = 'harness_policy_checks';
 try {
     if ($policyFailed) {
-        throw new RuntimeException('Harness identity policy self-check failed.');
+        throw new PreflightDiagnosticException('harness_policy_checks_failed');
     }
+    $preflightGate = 'runner_identity';
     $config = Identity::config($initialEnv);
-    if (PHP_VERSION !== (string) ($initialEnv['P07_EXPECTED_PHP_VERSION'] ?? '')) {
-        throw new RuntimeException('PHP runtime version does not match this exact CI matrix entry.');
-    }
-    if (!str_starts_with((string) lockedLaravelVersion(), 'v12.')) {
-        throw new RuntimeException('Locked Laravel framework version is unavailable or outside Laravel 12.x.');
-    }
+    $preflightGate = 'php_runtime';
+    Identity::assertRuntimePhpVersion(PHP_VERSION, (string) ($initialEnv['P07_EXPECTED_PHP_VERSION'] ?? ''));
+    $preflightGate = 'laravel_lock';
+    Identity::assertLaravelVersion(lockedLaravelVersion());
 
+    $preflightGate = 'database_connection';
     $pdo = Identity::connect($config);
+    $preflightGate = 'database_identity';
     $databaseIdentity = Identity::inspect($pdo, $config);
     $report['database_identity'] = $databaseIdentity;
     $report['preflight'] = ['status' => 'PASS', 'checks' => [
-        'GitHub Actions GitHub-hosted Linux runner', 'mapped host endpoint port matches the Actions service mapping',
+        'GitHub Actions GitHub-hosted Linux runner', 'approved GitHub repository, server host, and workflow identity',
+        'mapped host endpoint port matches the Actions service mapping',
         'connected MySQL internal server port matches expected port 3306',
         'unique run/attempt schema and matching job user', 'exact Oracle MySQL Community Server 8.4.13 identity',
         'schema, internal server port, PDO_MYSQL and authenticated user match expected values',
         'database grants limited to the unique job schema', 'PHP matrix and locked Laravel 12.x match target',
     ]];
 
+    $preflightGate = 'probe_execution';
     $factory = static fn (): PDO => Identity::connect($config);
     $suite = new ProbeSuite($config, $factory);
     $probeResults = $suite->run();
@@ -213,7 +224,7 @@ try {
 } catch (Throwable $error) {
     $report['preflight'] = [
         'status' => 'FAIL',
-        'error_classification' => safeError($error),
+        'error_classification' => safeError($error, $preflightGate),
         'probes_blocked' => true,
     ];
     $report['overall_result'] = 'BLOCKED';
@@ -229,8 +240,10 @@ try {
     $paths = writeReports($report, $outputDirectory);
     fwrite(STDOUT, 'Evidence reports written: ' . basename($paths['json']) . ', ' . basename($paths['markdown']) . PHP_EOL);
 } catch (Throwable $error) {
-    fwrite(STDERR, 'Evidence report write failed; classified as ' . safeError($error)['class'] . PHP_EOL);
+    $classification = safeError($error, 'artifact_output');
+    fwrite(STDERR, 'Evidence report write failed; code=' . $classification['code'] . ' class=' . $classification['class'] . PHP_EOL);
     exit(3);
 }
 
 exit($report['overall_result'] === 'PASS' ? 0 : 1);
+}
