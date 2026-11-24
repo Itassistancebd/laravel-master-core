@@ -1,0 +1,85 @@
+name: P-07 isolated MySQL evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p07-mysql-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    name: PHP ${{ matrix.php }} / MySQL 8.4.13
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.3.37'
+            job_suffix: p83
+          - php: '8.4.28'
+            job_suffix: p84
+          - php: '8.5.12'
+            job_suffix: p85
+    services:
+      mysql:
+        image: mysql:8.4.13
+        env:
+          MYSQL_ROOT_PASSWORD: p07-root-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.job_suffix }}-ephemeral
+          MYSQL_DATABASE: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          MYSQL_USER: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          MYSQL_PASSWORD: p07-user-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.job_suffix }}-ephemeral
+        ports:
+          - 3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+          --health-start-period=20s
+    steps:
+      - name: Check out the workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install exact PHP matrix runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql
+          tools: none
+          coverage: none
+
+      - name: Run standalone probes after identity policy checks and database preflight
+        shell: bash
+        env:
+          P07_DB_HOST: 127.0.0.1
+          P07_DB_PORT: ${{ job.services.mysql.ports[3306] }}
+          P07_EXPECTED_HOST: 127.0.0.1
+          P07_EXPECTED_PORT: ${{ job.services.mysql.ports[3306] }}
+          P07_EXPECTED_SERVER_PORT: '3306'
+          P07_DB_SCHEMA: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          P07_EXPECTED_SCHEMA: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          P07_JOB_SUFFIX: ${{ matrix.job_suffix }}
+          P07_DB_USER: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          P07_EXPECTED_USER: p07_${{ github.run_id }}_${{ github.run_attempt }}_${{ matrix.job_suffix }}
+          P07_DB_PASSWORD: p07-user-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.job_suffix }}-ephemeral
+          P07_EXPECTED_SERVER_VERSION: 8.4.13
+          P07_EXPECTED_PHP_VERSION: ${{ matrix.php }}
+          P07_OUTPUT_DIR: artifacts/p07
+          CI: 'true'
+        run: php scripts/p07/run.php
+
+      - name: Upload JSON and Markdown evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p07-evidence-php-${{ matrix.php }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/p07/*
+          if-no-files-found: warn
+          retention-days: 90
